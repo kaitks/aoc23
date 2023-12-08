@@ -50,7 +50,7 @@ func main() {
 						blue = count
 					}
 				default:
-					fmt.Errorf("color not defined: %w", countString[1])
+					println(fmt.Errorf("color not defined: %w", countString[1]))
 				}
 			}
 		}
