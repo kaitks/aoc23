@@ -14,8 +14,11 @@ import (
 func main() {
 	pwd, _ := os.Getwd()
 	// Get the file name from the command line argument
-	var fileName = "input" // Open the file for reading
-	file, err := os.Open(filepath.Join(pwd, fileName))
+	fileName := "input" // Open the file for reading
+	filePath := filepath.Join(pwd, fileName)
+	println("Input file:", filePath)
+
+	file, err := os.Open(filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,38 +32,41 @@ func main() {
 
 	x := 0
 	numbers := []Number{}
-	locs := []Loc{}
-	id := 1
 
-	blastZone := []Loc{}
+	id := 1
+	blastZone := mapset.NewSet[Loc]()
 	damagedIds := mapset.NewSet[string]()
 	acc := 0
 
 	// Loop over the lines in the file
 	for scanner.Scan() {
-		//if x == 2 {
-		//	break
-		//}
 		line := scanner.Text()
+		lineLength := len(line)
 		numberString := ""
+		locs := []Loc{}
 		for y, item := range line {
 			maybeInt := string(item)
+			loc := Loc{x, y}
 
 			if NUMBERS.Contains(maybeInt) {
 				numberString += maybeInt
-				locs = append(locs, Loc{x, y})
-			} else {
+				locs = append(locs, loc)
+			}
+
+			if !NUMBERS.Contains(maybeInt) || y == lineLength-1 {
 				if numberString != "" {
 					value, _ := strconv.Atoi(numberString)
 					number := Number{strconv.Itoa(id), value, locs}
 					numbers = append(numbers, number)
+
+					// reset for next number
+					id++
 					numberString = ""
 					locs = []Loc{}
-					id++
 				}
 
 				if SYMBOL.Contains(maybeInt) {
-					blastZone = append(blastZone, Loc{x, y})
+					blastZone.Add(loc)
 				}
 			}
 		}
@@ -80,18 +86,18 @@ func main() {
 		numbersIds.Add(number.ID)
 	}
 
-	for _, loc := range blastZone {
-		blastZone = append(blastZone, Loc{loc.X - 1, loc.Y - 1})
-		blastZone = append(blastZone, Loc{loc.X, loc.Y - 1})
-		blastZone = append(blastZone, Loc{loc.X + 1, loc.Y - 1})
-		blastZone = append(blastZone, Loc{loc.X - 1, loc.Y})
-		blastZone = append(blastZone, Loc{loc.X + 1, loc.Y})
-		blastZone = append(blastZone, Loc{loc.X - 1, loc.Y + 1})
-		blastZone = append(blastZone, Loc{loc.X, loc.Y + 1})
-		blastZone = append(blastZone, Loc{loc.X + 1, loc.Y + 1})
+	for _, loc := range blastZone.ToSlice() {
+		blastZone.Add(Loc{loc.X - 1, loc.Y - 1})
+		blastZone.Add(Loc{loc.X, loc.Y - 1})
+		blastZone.Add(Loc{loc.X + 1, loc.Y - 1})
+		blastZone.Add(Loc{loc.X - 1, loc.Y})
+		blastZone.Add(Loc{loc.X + 1, loc.Y})
+		blastZone.Add(Loc{loc.X - 1, loc.Y + 1})
+		blastZone.Add(Loc{loc.X, loc.Y + 1})
+		blastZone.Add(Loc{loc.X + 1, loc.Y + 1})
 	}
 
-	for _, loc := range blastZone {
+	for _, loc := range blastZone.ToSlice() {
 		damaged := numbersLocIndex[loc]
 		numbersIds.Remove(damaged)
 		damagedIds.Add(damaged)
