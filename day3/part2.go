@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 )
 
@@ -28,14 +27,15 @@ func main() {
 	scanner := bufio.NewScanner(file)
 
 	NUMBERS := mapset.NewSet[string]("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
-	SYMBOL := mapset.NewSet[string]("*", "#", "+", "$", "/", "-", "&", "=", "@", "%")
+	SYMBOL := mapset.NewSet[string]("*")
 
-	x := 0
+	v := 1
 	numbers := []Number{}
 
 	id := 1
-	blastZone := mapset.NewSet[Loc]()
-	damagedIds := mapset.NewSet[string]()
+	symbolLocs := mapset.NewSet[Loc]()
+	gearLocs := [][]Loc{}
+
 	acc := 0
 
 	// Loop over the lines in the file
@@ -44,16 +44,17 @@ func main() {
 		lineLength := len(line)
 		numberString := ""
 		locs := []Loc{}
-		for y, item := range line {
+		for i, item := range line {
+			h := i + 1
 			maybeInt := string(item)
-			loc := Loc{x, y}
+			loc := Loc{v, h}
 
 			if NUMBERS.Contains(maybeInt) {
 				numberString += maybeInt
 				locs = append(locs, loc)
 			}
 
-			if !NUMBERS.Contains(maybeInt) || y == lineLength-1 {
+			if !NUMBERS.Contains(maybeInt) || h == lineLength {
 				if numberString != "" {
 					value, _ := strconv.Atoi(numberString)
 					number := Number{strconv.Itoa(id), value, locs}
@@ -64,13 +65,13 @@ func main() {
 					numberString = ""
 					locs = []Loc{}
 				}
+			}
 
-				if SYMBOL.Contains(maybeInt) {
-					blastZone.Add(loc)
-				}
+			if SYMBOL.Contains(maybeInt) {
+				symbolLocs.Add(loc)
 			}
 		}
-		x++
+		v++
 	}
 
 	numbersIdIndex := map[string]Number{}
@@ -86,30 +87,36 @@ func main() {
 		numbersIds.Add(number.ID)
 	}
 
-	for _, loc := range blastZone.ToSlice() {
-		blastZone.Add(Loc{loc.X - 1, loc.Y - 1})
-		blastZone.Add(Loc{loc.X, loc.Y - 1})
-		blastZone.Add(Loc{loc.X + 1, loc.Y - 1})
-		blastZone.Add(Loc{loc.X - 1, loc.Y})
-		blastZone.Add(Loc{loc.X + 1, loc.Y})
-		blastZone.Add(Loc{loc.X - 1, loc.Y + 1})
-		blastZone.Add(Loc{loc.X, loc.Y + 1})
-		blastZone.Add(Loc{loc.X + 1, loc.Y + 1})
+	symbolLocsSlice := symbolLocs.ToSlice()
+
+	for _, loc := range symbolLocsSlice {
+		gearLocs = append(gearLocs, []Loc{
+			{loc.V - 1, loc.H - 1},
+			{loc.V, loc.H - 1},
+			{loc.V + 1, loc.H - 1},
+			{loc.V - 1, loc.H},
+			{loc.V + 1, loc.H},
+			{loc.V - 1, loc.H + 1},
+			{loc.V, loc.H + 1},
+			{loc.V + 1, loc.H + 1},
+		})
 	}
 
-	for _, loc := range blastZone.ToSlice() {
-		damaged := numbersLocIndex[loc]
-		numbersIds.Remove(damaged)
-		damagedIds.Add(damaged)
-	}
-
-	sorted := damagedIds.ToSlice()
-	sort.Strings(sorted)
-
-	fmt.Printf("%+v \n", sorted)
-
-	for _, numberId := range sorted {
-		acc += numbersIdIndex[numberId].Value
+	for _, locs := range gearLocs {
+		gearIds := mapset.NewSet[string]()
+		for _, loc := range locs {
+			number, exist := numbersLocIndex[loc]
+			if exist {
+				gearIds.Add(number)
+			}
+		}
+		gearIdsSlice := gearIds.ToSlice()
+		if len(gearIdsSlice) == 2 {
+			firstGear := numbersIdIndex[gearIdsSlice[0]]
+			secondGear := numbersIdIndex[gearIdsSlice[1]]
+			acc += firstGear.Value * secondGear.Value
+			fmt.Printf("%+v %d %d\n", acc, firstGear.Value, secondGear.Value)
+		}
 	}
 
 	fmt.Printf("%+v \n", acc)
@@ -127,6 +134,6 @@ type Number struct {
 }
 
 type Loc struct {
-	X int
-	Y int
+	V int
+	H int
 }
