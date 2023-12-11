@@ -5,18 +5,13 @@ import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"log"
-	"math"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 )
 
-func main() {
-	day4("input")
-}
-
-func day4(fileName string) int {
+func day4p2(fileName string) int {
 	pwd, _ := os.Getwd()
 	// Get the file name from the command line argument
 	filePath := filepath.Join(pwd, fileName)
@@ -33,6 +28,10 @@ func day4(fileName string) int {
 
 	acc := 0
 
+	winCardIndex := map[int]int{}
+
+	id := 1
+
 	// Loop over the lines in the file
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -46,15 +45,34 @@ func day4(fileName string) int {
 		myNumbers.Remove("")
 		overlap := myNumbers.Intersect(winningNumbers)
 		overlapLength := float64(overlap.Cardinality())
-		factor := overlapLength - 1
-		value := int(math.Pow(2, factor))
-		acc += value
-		fmt.Printf("%+v ;", winningNumbers)
-		fmt.Printf("%+v ;", myNumbers)
-		fmt.Printf("%+v ;", overlap)
-		fmt.Printf("2 ^ %v = %v \n", factor, value)
+		winCardIndex[id] = int(overlapLength)
+		id++
 	}
 
+	totalCard := len(winCardIndex)
+	cardCountIndex := map[int]int{}
+	for i := 1; i <= totalCard; i++ {
+		cardCountIndex[i] = 1
+	}
+
+	for i := 1; i <= totalCard; i++ {
+		winCount := winCardIndex[i]
+		cardCount := cardCountIndex[i]
+
+		for j := 1; j <= winCount; j++ {
+			jCardCount, exists := cardCountIndex[i+j]
+			if exists {
+				cardCountIndex[i+j] = jCardCount + cardCount
+			}
+		}
+	}
+
+	for _, v := range cardCountIndex {
+		acc += v
+	}
+
+	fmt.Printf("%+v \n", winCardIndex)
+	fmt.Printf("%+v \n", cardCountIndex)
 	fmt.Printf("%+v \n", acc)
 
 	// Check for errors during scanning
