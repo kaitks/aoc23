@@ -10,11 +10,7 @@ import (
 	"strconv"
 )
 
-func main() {
-	day3("input")
-}
-
-func day3(fileName string) int {
+func day3p2(fileName string) int {
 	pwd, _ := os.Getwd()
 	// Get the file name from the command line argument
 	filePath := filepath.Join(pwd, fileName)

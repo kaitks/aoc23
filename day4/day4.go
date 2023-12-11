@@ -12,10 +12,6 @@ import (
 	"strings"
 )
 
-func main() {
-	day4("input")
-}
-
 func day4(fileName string) int {
 	pwd, _ := os.Getwd()
 	// Get the file name from the command line argument
