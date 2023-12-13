@@ -1,14 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
-	"log"
-	"math"
+	"golang.org/x/exp/maps"
 	"os"
 	"path/filepath"
-	"regexp"
+	"slices"
+	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -18,45 +17,69 @@ func day5(fileName string) int {
 	filePath := filepath.Join(pwd, fileName)
 	println("Input file:", filePath)
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
+	raw, _ := os.ReadFile(filePath)
+	data := string(raw)
 
-	// Create a scanner to read the file line by line
-	scanner := bufio.NewScanner(file)
+	sections := strings.Split(data, "\n\n")
+	seeds := strings.Split(strings.Split(sections[0], ": ")[1], " ")
+	resources := []map[int]ResourceMap{}
 
-	acc := 0
-
-	// Loop over the lines in the file
-	for scanner.Scan() {
-		line := scanner.Text()
-		parts := strings.Split(strings.Split(line, ": ")[1], " | ")
-		regex := regexp.MustCompile(`\s+`)
-		winningNumbers := mapset.NewSet[string]()
-		winningNumbers.Append(regex.Split(parts[0], -1)...)
-		winningNumbers.Remove("")
-		myNumbers := mapset.NewSet[string]()
-		myNumbers.Append(strings.Split(parts[1], " ")...)
-		myNumbers.Remove("")
-		overlap := myNumbers.Intersect(winningNumbers)
-		overlapLength := float64(overlap.Cardinality())
-		factor := overlapLength - 1
-		value := int(math.Pow(2, factor))
-		acc += value
-		fmt.Printf("%+v ;", winningNumbers)
-		fmt.Printf("%+v ;", myNumbers)
-		fmt.Printf("%+v ;", overlap)
-		fmt.Printf("2 ^ %v = %v \n", factor, value)
+	for i := 1; i < len(sections); i++ {
+		mapData := strings.Split(strings.Split(sections[i], ":\n")[1], "\n")
+		resourceMap := map[int]ResourceMap{}
+		for _, mapString := range mapData {
+			fields := strings.Split(mapString, " ")
+			destination, _ := strconv.Atoi(fields[0])
+			source, _ := strconv.Atoi(fields[1])
+			rangeLength, _ := strconv.Atoi(fields[2])
+			resourceMap[source] = ResourceMap{destination, source, rangeLength}
+		}
+		resources = append(resources, resourceMap)
 	}
 
-	fmt.Printf("%+v \n", acc)
+	locs := []int{}
 
-	// Check for errors during scanning
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+	for _, seedString := range seeds {
+		seed, _ := strconv.Atoi(seedString)
+		source := seed
+		for _, resourceMap := range resources {
+			destination := getDestination(source, resourceMap)
+			source = destination
+		}
+		locs = append(locs, source)
 	}
 
-	return acc
+	//fmt.Printf("%+v \n", seeds)
+	//fmt.Printf("%+v \n", resources)
+	//fmt.Printf("%+v \n", locs)
+
+	minLoc := slices.Min(locs)
+	fmt.Printf("%+v \n", minLoc)
+
+	return minLoc
+}
+
+func getDestination(source int, resourceMap map[int]ResourceMap) int {
+	nearest := 0
+	keys := maps.Keys(resourceMap)
+	sort.Ints(keys)
+	for _, key := range keys {
+		if source >= key {
+			nearest = key
+		} else {
+			break
+		}
+	}
+	resource := resourceMap[nearest]
+	result := source
+	if resource.Source+resource.RangeLength >= source {
+		result = resource.Destination + source - resource.Source
+	}
+	return result
+}
+
+type ResourceMap struct {
+	Destination int
+	Source      int
+	RangeLength int
 }
