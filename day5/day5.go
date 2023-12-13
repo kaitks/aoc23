@@ -22,17 +22,17 @@ func day5(fileName string) int {
 
 	sections := strings.Split(data, "\n\n")
 	seeds := strings.Split(strings.Split(sections[0], ": ")[1], " ")
-	resources := []map[int]ResourceMap{}
+	resources := []map[int]Resource{}
 
 	for i := 1; i < len(sections); i++ {
 		mapData := strings.Split(strings.Split(sections[i], ":\n")[1], "\n")
-		resourceMap := map[int]ResourceMap{}
+		resourceMap := map[int]Resource{}
 		for _, mapString := range mapData {
 			fields := strings.Split(mapString, " ")
 			destination, _ := strconv.Atoi(fields[0])
 			source, _ := strconv.Atoi(fields[1])
 			rangeLength, _ := strconv.Atoi(fields[2])
-			resourceMap[source] = ResourceMap{destination, source, rangeLength}
+			resourceMap[source] = Resource{destination, source, rangeLength}
 		}
 		resources = append(resources, resourceMap)
 	}
@@ -59,7 +59,7 @@ func day5(fileName string) int {
 	return minLoc
 }
 
-func getDestination(source int, resourceMap map[int]ResourceMap) int {
+func getDestination(source int, resourceMap map[int]Resource) int {
 	nearest := 0
 	keys := maps.Keys(resourceMap)
 	sort.Ints(keys)
@@ -78,7 +78,7 @@ func getDestination(source int, resourceMap map[int]ResourceMap) int {
 	return result
 }
 
-type ResourceMap struct {
+type Resource struct {
 	Destination int
 	Source      int
 	RangeLength int
