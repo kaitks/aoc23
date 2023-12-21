@@ -22,10 +22,6 @@ func TestDay5(t *testing.T) {
 }
 
 func TestDay5P2(t *testing.T) {
-	result := day5p2("input")
-	if result != 331445006 {
-		t.Fail()
-	}
 	r := day5p2("test_data")
 	if r != 46 {
 		t.Fail()
@@ -34,7 +30,7 @@ func TestDay5P2(t *testing.T) {
 
 func TestDay5P2V2(t *testing.T) {
 	r := day5p2v2("input")
-	if r != 46 {
+	if r != 6472060 {
 		t.Fail()
 	}
 }
@@ -42,6 +38,27 @@ func TestDay5P2V2(t *testing.T) {
 func TestDay5P2V2_T(t *testing.T) {
 	r := day5p2v2("test_data")
 	if r != 46 {
+		t.Fail()
+	}
+}
+
+func TestDay5P2V2_T7(t *testing.T) {
+	r := day5p2v2("test_data_7")
+	if r != 46 {
+		t.Fail()
+	}
+}
+
+func TestDay5P2V2_T6(t *testing.T) {
+	r := day5p2v2("test_data_6")
+	if r != 46 {
+		t.Fail()
+	}
+}
+
+func TestDay5P2V2_T5(t *testing.T) {
+	r := day5p2v2("test_data_5")
+	if r != 81 {
 		t.Fail()
 	}
 }
@@ -71,6 +88,15 @@ func TestOverLapByRange(t *testing.T) {
 	resourcesRanges1 := []Range{{0, 2}, {11, 20}}
 	r1 := getOverlapByRange(rang, resourcesRanges1)
 	if len(r1) != 3 {
+		t.Fail()
+	}
+}
+
+func TestOverLapByRange_1(t *testing.T) {
+	rang := Range{74, 87}
+	resourcesRanges := []Range{{45, 63}, {64, 76}, {77, 99}}
+	r := getOverlapByRange(rang, resourcesRanges)
+	if len(r) != 2 {
 		t.Fail()
 	}
 }

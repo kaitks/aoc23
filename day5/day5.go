@@ -32,7 +32,7 @@ func day5(fileName string) int {
 			destination, _ := strconv.Atoi(fields[0])
 			source, _ := strconv.Atoi(fields[1])
 			rangeLength, _ := strconv.Atoi(fields[2])
-			resourceMap[source] = Resource{destination, source, rangeLength}
+			resourceMap[source] = mkResource(source, destination, rangeLength)
 		}
 		resources = append(resources, resourceMap)
 	}
@@ -79,8 +79,10 @@ func getDestination(source int, resourceMap map[int]Resource) int {
 }
 
 type Resource struct {
-	Destination int
 	Source      int
+	End         int
+	Offset      int
+	Destination int
 	RangeLength int
 }
 
@@ -88,6 +90,6 @@ func (r *Resource) offset() int {
 	return r.Destination - r.Source
 }
 
-func (r *Resource) End() int {
-	return r.Source + r.RangeLength
+func mkResource(Source int, Destination int, RangeLength int) Resource {
+	return Resource{Source: Source, Destination: Destination, RangeLength: RangeLength, End: Source + RangeLength - 1, Offset: Destination - Source}
 }

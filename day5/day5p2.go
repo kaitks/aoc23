@@ -38,7 +38,7 @@ func day5p2(fileName string) int {
 			destination, _ := strconv.Atoi(fields[0])
 			source, _ := strconv.Atoi(fields[1])
 			rangeLength, _ := strconv.Atoi(fields[2])
-			resourceMap[source] = Resource{destination, source, rangeLength}
+			resourceMap[source] = mkResource(source, destination, rangeLength)
 		}
 		resources = append(resources, resourceMap)
 	}

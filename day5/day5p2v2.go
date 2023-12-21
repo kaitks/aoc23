@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"golang.org/x/exp/maps"
 	"math"
 	"os"
 	"path/filepath"
@@ -17,6 +16,7 @@ func day5p2v2(fileName string) int {
 	// Get the file name from the command line argument
 	filePath := filepath.Join(pwd, fileName)
 	println("Input file:", filePath)
+	println("")
 
 	raw, _ := os.ReadFile(filePath)
 	data := string(raw)
@@ -24,7 +24,7 @@ func day5p2v2(fileName string) int {
 	sections := strings.Split(data, "\n\n")
 	seedRaws := strings.Split(strings.Split(sections[0], ": ")[1], " ")
 	seeds := []Seed{}
-	resources := []map[int]Resource{}
+	resources := [][]Resource{}
 
 	for i := 0; i < len(seedRaws); i = i + 2 {
 		seedStart, _ := strconv.Atoi(seedRaws[i])
@@ -34,15 +34,15 @@ func day5p2v2(fileName string) int {
 
 	for i := 1; i < len(sections); i++ {
 		mapData := strings.Split(strings.Split(sections[i], ":\n")[1], "\n")
-		resourceMap := map[int]Resource{}
+		resourceGroup := []Resource{}
 		for _, mapString := range mapData {
 			fields := strings.Split(mapString, " ")
 			destination, _ := strconv.Atoi(fields[0])
 			source, _ := strconv.Atoi(fields[1])
 			rangeLength, _ := strconv.Atoi(fields[2])
-			resourceMap[source] = Resource{destination, source, rangeLength}
+			resourceGroup = append(resourceGroup, mkResource(source, destination, rangeLength))
 		}
-		resources = append(resources, resourceMap)
+		resources = append(resources, resourceGroup)
 	}
 
 	results := make(chan int)
@@ -75,11 +75,16 @@ func day5p2v2(fileName string) int {
 	return minLoc
 }
 
-func getDestinationBySeedV2(seed Seed, resources []map[int]Resource) int {
+func getDestinationBySeedV2(seed Seed, resources [][]Resource) int {
 	minLoc := math.MaxInt
-	ranges := []Range{{seed.Start, seed.Start + seed.RangeLength}}
-	for _, resourceMap := range resources {
-		destinations := getDestinationV2(ranges, resourceMap)
+	ranges := []Range{{seed.Start, seed.Start + seed.RangeLength - 1}}
+	for _, resourceGroup := range resources {
+		sort.Slice(resourceGroup, func(i, j int) bool {
+			return resourceGroup[i].Source < resourceGroup[j].Source
+		})
+
+		destinations := getDestinationV2(ranges, resourceGroup)
+		fmt.Printf("Destinations %+v \n\n", destinations)
 		ranges = destinations
 	}
 	for _, rang := range ranges {
@@ -90,27 +95,27 @@ func getDestinationBySeedV2(seed Seed, resources []map[int]Resource) int {
 	return minLoc
 }
 
-func getDestinationV2(ranges []Range, resourceMap map[int]Resource) []Range {
+func getDestinationV2(ranges []Range, resourceGroup []Resource) []Range {
+	fmt.Printf("Ranges %+v \n", ranges)
+	fmt.Printf("ResourceGroup %+v \n", resourceGroup)
 	dest := []Range{}
 	for _, rang := range ranges {
-		dest = append(dest, getDestinationV2ByRange(rang, resourceMap)...)
+		dest = append(dest, getDestinationV2ByRange(rang, resourceGroup)...)
 	}
 	return dest
 }
 
-func getDestinationV2ByRange(rang Range, resourceMap map[int]Resource) []Range {
-	resources := maps.Values(resourceMap)
-	sort.Slice(resources, func(i, j int) bool {
-		return resources[i].Source < resources[j].Source
-	})
+func getDestinationV2ByRange(rang Range, resourceGroup []Resource) []Range {
+	resources := resourceGroup
 	resourcesRanges := []Range{}
 	for _, resource := range resources {
-		resourcesRanges = append(resourcesRanges, Range{resource.Source, resource.End()})
+		resourcesRanges = append(resourcesRanges, Range{resource.Source, resource.End})
 	}
 	sort.Slice(resourcesRanges, func(i, j int) bool {
 		return resourcesRanges[i].Start > resourcesRanges[j].Start
 	})
 	sourceRanges := getOverlapByRange(rang, resourcesRanges)
+	fmt.Printf("Overlap %+v \n", sourceRanges)
 	var dest []Range
 
 	for _, sourceRange := range sourceRanges {
@@ -131,7 +136,7 @@ func findResource(sourceRange Range, resources []Resource) Resource {
 	}
 
 	for _, resource := range resources {
-		if sourceRange.Start >= resource.Source && sourceRange.Start <= resource.End() {
+		if sourceRange.Start >= resource.Source && sourceRange.Start <= resource.End {
 			result = resource
 			break
 		}
