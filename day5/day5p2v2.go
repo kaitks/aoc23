@@ -120,7 +120,6 @@ func getDestinationV2ByRange(rang Range, resourceGroup []Resource) []Range {
 
 	for _, sourceRange := range sourceRanges {
 		resource := findResource(sourceRange, resources)
-		// wrong
 		offset := sourceRange.Start - resource.Source
 		dest = append(dest, Range{resource.Destination + offset, resource.Destination + offset + sourceRange.rangeLength()})
 	}
