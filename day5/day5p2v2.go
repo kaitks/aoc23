@@ -100,6 +100,9 @@ func getDestinationV2(ranges []Range, resourceMap map[int]Resource) []Range {
 
 func getDestinationV2ByRange(rang Range, resourceMap map[int]Resource) []Range {
 	resources := maps.Values(resourceMap)
+	sort.Slice(resources, func(i, j int) bool {
+		return resources[i].Source < resources[j].Source
+	})
 	resourcesRanges := []Range{}
 	for _, resource := range resources {
 		resourcesRanges = append(resourcesRanges, Range{resource.Source, resource.End()})
@@ -111,58 +114,73 @@ func getDestinationV2ByRange(rang Range, resourceMap map[int]Resource) []Range {
 	var dest []Range
 
 	for _, sourceRange := range sourceRanges {
-		resource, exists := resourceMap[sourceRange.Start]
-		if !exists {
-			resource = Resource{
-				Destination: sourceRange.Start,
-				Source:      sourceRange.Start,
-				RangeLength: sourceRange.rangeLength(),
-			}
-		}
-		dest = append(dest, Range{resource.Destination, resource.Destination + sourceRange.rangeLength()})
+		resource := findResource(sourceRange, resources)
+		// wrong
+		offset := sourceRange.Start - resource.Source
+		dest = append(dest, Range{resource.Destination + offset, resource.Destination + offset + sourceRange.rangeLength()})
 	}
 
 	return dest
 }
 
+func findResource(sourceRange Range, resources []Resource) Resource {
+	result := Resource{
+		Destination: sourceRange.Start,
+		Source:      sourceRange.Start,
+		RangeLength: sourceRange.rangeLength(),
+	}
+
+	for _, resource := range resources {
+		if sourceRange.Start >= resource.Source && sourceRange.Start <= resource.End() {
+			result = resource
+			break
+		}
+	}
+
+	return result
+}
+
 func getOverlapByRange(rang Range, resourceRanges []Range) []Range {
+	var points []Point
 	var overlap []Range
-	startRange := rang
-	for i, resourceRange := range resourceRanges {
-		if startRange.Start > resourceRange.End {
-			if i == len(resourceRanges)-1 {
-				overlap = append(overlap, startRange)
-			}
-			continue
-		} else if startRange.Start >= resourceRange.Start && startRange.End <= resourceRange.End {
-			overlap = append(overlap, startRange)
-			break
-		} else if startRange.Start >= resourceRange.Start && startRange.End > resourceRange.End {
-			overlap = append(overlap, Range{startRange.Start, resourceRange.End})
-			startRange = Range{resourceRange.End + 1, startRange.End}
-			if i == len(resourceRanges)-1 {
-				overlap = append(overlap, startRange)
-			}
-		} else if startRange.End < resourceRange.Start {
-			overlap = append(overlap, startRange)
-			break
-		} else if startRange.Start < resourceRange.Start {
-			overlap = append(overlap, Range{startRange.Start, resourceRange.Start - 1})
-			startRange = Range{resourceRange.Start, startRange.End}
-			if i == len(resourceRanges)-1 {
-				overlap = append(overlap, startRange)
-			}
+
+	points = append(points, Point{rang.Start, SStart}, Point{rang.End, SEnd})
+	for _, resourceRange := range resourceRanges {
+		if resourceRange.Start > rang.Start && resourceRange.Start <= rang.End {
+			points = append(points, Point{resourceRange.Start, RStart})
+		}
+		if resourceRange.End >= rang.Start && resourceRange.End < rang.End {
+			points = append(points, Point{resourceRange.End, REnd})
+		}
+	}
+	sort.Slice(points, func(i, j int) bool {
+		var comparison bool
+		if points[i].Value == points[j].Value {
+			comparison = points[i].Type < points[j].Type
 		} else {
-			break
+			comparison = points[i].Value < points[j].Value
+		}
+		return comparison
+	})
+	for i := 0; i < len(points)-1; i++ {
+		start := points[i]
+		end := points[i+1]
+		if start.Type == SStart && end.Type == RStart {
+			overlap = append(overlap, Range{start.Value, end.Value - 1})
+		} else if start.Type == SStart && (end.Type == REnd || end.Type == SEnd) {
+			overlap = append(overlap, Range{start.Value, end.Value})
+		} else if start.Type == RStart && (end.Type == REnd || end.Type == SEnd) {
+			overlap = append(overlap, Range{start.Value, end.Value})
+		} else if start.Type == REnd && end.Type == RStart && (end.Value-1) > (start.Value+1) {
+			overlap = append(overlap, Range{start.Value + 1, end.Value - 1})
+		} else if start.Type == REnd && end.Type == SEnd {
+			overlap = append(overlap, Range{start.Value + 1, end.Value})
+		} else {
+			continue
 		}
 	}
 	return overlap
 }
-
-//func getOverlap(rang Range, resourceRange Range) []Range {
-//	var overlap []Range
-//	return overlap
-//}
 
 type Range struct {
 	Start int
