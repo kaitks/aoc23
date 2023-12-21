@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -20,13 +21,13 @@ func day5p2(fileName string) int {
 
 	sections := strings.Split(data, "\n\n")
 	seedRaws := strings.Split(strings.Split(sections[0], ": ")[1], " ")
+	seeds := []Seed{}
 	resources := []map[int]Resource{}
-	seeds := []int{}
+
 	for i := 0; i < len(seedRaws); i = i + 2 {
 		seedStart, _ := strconv.Atoi(seedRaws[i])
 		seedLength, _ := strconv.Atoi(seedRaws[i+1])
-		seedRange := makeRange(seedStart, seedStart+seedLength-1)
-		seeds = append(seeds, seedRange...)
+		seeds = append(seeds, Seed{seedStart, seedLength})
 	}
 
 	for i := 1; i < len(sections); i++ {
@@ -42,24 +43,50 @@ func day5p2(fileName string) int {
 		resources = append(resources, resourceMap)
 	}
 
-	locs := []int{}
+	results := make(chan int)
 
 	for _, seed := range seeds {
-		source := seed
-		for _, resourceMap := range resources {
-			destination := getDestination(source, resourceMap)
-			source = destination
-		}
-		locs = append(locs, source)
+		go func(seed Seed, c chan int) {
+			result := getDestinationBySeed(seed, resources)
+			c <- result
+		}(seed, results)
 	}
+
+	locs := []int{}
+
+	for i := 0; i < len(seeds); i++ {
+		result := <-results
+		locs = append(locs, result)
+		fmt.Println("Result", i, ":", result)
+	}
+
+	close(results)
+
+	minLoc := slices.Min(locs)
 
 	//fmt.Printf("%+v \n", seeds)
 	//fmt.Printf("%+v \n", resources)
 	//fmt.Printf("%+v \n", locs)
 
-	minLoc := slices.Min(locs)
 	fmt.Printf("%+v \n", minLoc)
 
+	return minLoc
+}
+
+func getDestinationBySeed(seed Seed, resources []map[int]Resource) int {
+	minLoc := math.MaxInt
+	for i := 0; i < seed.RangeLength; i++ {
+		value := seed.Start + i
+		source := value
+
+		for _, resourceMap := range resources {
+			destination := getDestination(source, resourceMap)
+			source = destination
+		}
+		if minLoc > source {
+			minLoc = source
+		}
+	}
 	return minLoc
 }
 
@@ -69,4 +96,9 @@ func makeRange(min, max int) []int {
 		a[i] = min + i
 	}
 	return a
+}
+
+type Seed struct {
+	Start       int
+	RangeLength int
 }

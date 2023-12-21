@@ -83,3 +83,11 @@ type Resource struct {
 	Source      int
 	RangeLength int
 }
+
+func (r *Resource) offset() int {
+	return r.Destination - r.Source
+}
+
+func (r *Resource) End() int {
+	return r.Source + r.RangeLength
+}
