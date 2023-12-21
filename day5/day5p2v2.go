@@ -84,7 +84,7 @@ func getDestinationBySeedV2(seed Seed, resources [][]Resource) int {
 		})
 
 		destinations := getDestinationV2(ranges, resourceGroup)
-		fmt.Printf("Destinations %+v \n\n", destinations)
+		//fmt.Printf("Destinations %+v \n\n", destinations)
 		ranges = destinations
 	}
 	for _, rang := range ranges {
@@ -96,8 +96,8 @@ func getDestinationBySeedV2(seed Seed, resources [][]Resource) int {
 }
 
 func getDestinationV2(ranges []Range, resourceGroup []Resource) []Range {
-	fmt.Printf("Ranges %+v \n", ranges)
-	fmt.Printf("ResourceGroup %+v \n", resourceGroup)
+	//fmt.Printf("Ranges %+v \n", ranges)
+	//fmt.Printf("ResourceGroup %+v \n", resourceGroup)
 	dest := []Range{}
 	for _, rang := range ranges {
 		dest = append(dest, getDestinationV2ByRange(rang, resourceGroup)...)
@@ -115,7 +115,7 @@ func getDestinationV2ByRange(rang Range, resourceGroup []Resource) []Range {
 		return resourcesRanges[i].Start > resourcesRanges[j].Start
 	})
 	sourceRanges := getOverlapByRange(rang, resourcesRanges)
-	fmt.Printf("Overlap %+v \n", sourceRanges)
+	//fmt.Printf("Overlap %+v \n", sourceRanges)
 	var dest []Range
 
 	for _, sourceRange := range sourceRanges {
