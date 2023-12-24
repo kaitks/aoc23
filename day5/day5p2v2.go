@@ -1,6 +1,7 @@
 package main
 
 import (
+	"aoc23/utils"
 	"fmt"
 	"math"
 	"os"
@@ -12,6 +13,7 @@ import (
 )
 
 func day5p2v2(fileName string) int {
+	defer utils.Timer("day5p2v2")()
 	pwd, _ := os.Getwd()
 	// Get the file name from the command line argument
 	filePath := filepath.Join(pwd, fileName)
