@@ -33,10 +33,22 @@ func day7p2(fileName string) int {
 
 	var hands []Hand
 
+	chanel := make(chan Hand)
+
 	for scanner.Scan() {
 		line := scanner.Text()
-		hands = append(hands, parseLine(line))
+		go func(line string, c chan Hand) {
+			hand := parseLine(line)
+			c <- hand
+		}(line, chanel)
 	}
+
+	for i := 0; i < 1000; i++ {
+		hand := <-chanel
+		hands = append(hands, hand)
+	}
+
+	close(chanel)
 
 	sort.Slice(hands, func(i, j int) bool {
 		first := hands[i]
