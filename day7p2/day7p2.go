@@ -71,33 +71,7 @@ func day7p2(fileName string) int {
 func toHand(Value string, OriginalValue string, Bid int) Hand {
 	OriginalCards := toCards(OriginalValue)
 	Cards := toCards(Value)
-	cardMap := map[Card]int{}
-	for _, card := range Cards {
-		found, exists := cardMap[card]
-		if !exists {
-			cardMap[card] = 1
-		} else {
-			cardMap[card] = found + 1
-		}
-	}
-	var cardStats []CardStat
-	for card, count := range cardMap {
-		cardStats = append(cardStats, CardStat{card, count})
-	}
-	slices.SortFunc(cardStats, func(a, b CardStat) int {
-		if a.Count > b.Count {
-			return 1
-		} else if a.Count < b.Count {
-			return -1
-		} else {
-			if a.Card.Strength > b.Card.Strength {
-				return 1
-			} else {
-				return -1
-			}
-		}
-	})
-	slices.Reverse(cardStats)
+	cardStats, cardMap := toCardStats(Cards)
 
 	stat1 := cardStats[0]
 	stat2 := stat1
@@ -164,6 +138,37 @@ func toCards(Value string) []Card {
 		Cards = append(Cards, toCard(str))
 	}
 	return Cards
+}
+
+func toCardStats(Cards []Card) ([]CardStat, map[Card]int) {
+	cardMap := map[Card]int{}
+	for _, card := range Cards {
+		found, exists := cardMap[card]
+		if !exists {
+			cardMap[card] = 1
+		} else {
+			cardMap[card] = found + 1
+		}
+	}
+	var cardStats []CardStat
+	for card, count := range cardMap {
+		cardStats = append(cardStats, CardStat{card, count})
+	}
+	slices.SortFunc(cardStats, func(a, b CardStat) int {
+		if a.Count > b.Count {
+			return 1
+		} else if a.Count < b.Count {
+			return -1
+		} else {
+			if a.Card.Strength > b.Card.Strength {
+				return 1
+			} else {
+				return -1
+			}
+		}
+	})
+	slices.Reverse(cardStats)
+	return cardStats, cardMap
 }
 
 func parseLine(line string) Hand {
