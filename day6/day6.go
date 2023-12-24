@@ -53,8 +53,11 @@ func countPossiblePressTime(t int, d int) int {
 	root1 := (float64(t) - delta) / 2
 	root2 := (float64(t) + delta) / 2
 	mi := max(int(math.Floor(root1+1)), 0)
-	ma := int(math.Ceil(root2 - 1))
-	count := ma - mi + 1
+	ma := max(int(math.Ceil(root2-1)), mi)
+	count := 0
+	if ma > mi {
+		count = ma - mi + 1
+	}
 	fmt.Printf("Time: %d, Distance: %d, Min: %d, Max: %d, Count: %d\n", t, d, mi, ma, count)
 	return count
 }
