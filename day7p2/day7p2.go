@@ -118,7 +118,7 @@ func toHand(Value string, OriginalValue string, Bid int) Hand {
 		return Hand{Value, OriginalValue, Bid, KindStrength}
 	} else {
 		if card1 == JCard {
-			Value = strings.ReplaceAll(Value, card1.Value, card2.Value)
+			Value = strings.ReplaceAll(Value, JCard.Value, card2.Value)
 			return toHand(Value, OriginalValue, Bid)
 		} else {
 			Value = strings.ReplaceAll(Value, JCard.Value, card1.Value)
