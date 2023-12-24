@@ -1,8 +1,6 @@
 package main
 
 import (
-	"aoc23/utils"
-	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -13,12 +11,12 @@ import (
 )
 
 func day5p2v2(fileName string) int {
-	defer utils.Timer("day5p2v2")()
+	//defer utils.Timer("day5p2v2")()
 	pwd, _ := os.Getwd()
 	// Get the file name from the command line argument
 	filePath := filepath.Join(pwd, fileName)
-	println("Input file:", filePath)
-	println("")
+	//println("Input file:", filePath)
+	//println("")
 
 	raw, _ := os.ReadFile(filePath)
 	data := string(raw)
@@ -61,7 +59,7 @@ func day5p2v2(fileName string) int {
 	for i := 0; i < len(seeds); i++ {
 		result := <-results
 		locs = append(locs, result)
-		fmt.Println("Result", i, ":", result)
+		//fmt.Println("Result", i, ":", result)
 	}
 
 	close(results)
@@ -72,7 +70,7 @@ func day5p2v2(fileName string) int {
 	//fmt.Printf("%+v \n", resources)
 	//fmt.Printf("%+v \n", locs)
 
-	fmt.Printf("%+v \n", minLoc)
+	//fmt.Printf("%+v \n", minLoc)
 
 	return minLoc
 }

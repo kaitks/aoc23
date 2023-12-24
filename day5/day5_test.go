@@ -35,6 +35,12 @@ func TestDay5P2V2(t *testing.T) {
 	}
 }
 
+func BenchmarkDay5P2V2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		day5p2v2("input")
+	}
+}
+
 func TestDay5P2V2_T(t *testing.T) {
 	r := day5p2v2("test_data")
 	if r != 46 {

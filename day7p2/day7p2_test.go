@@ -15,3 +15,9 @@ func TestDay7P2T(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func BenchmarkDay7P2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		day7p2("input")
+	}
+}

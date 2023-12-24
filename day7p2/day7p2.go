@@ -2,7 +2,6 @@ package day7
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,11 +12,13 @@ import (
 )
 
 func day7p2(fileName string) int {
+	//defer utils.Timer("day7p2")()
+
 	pwd, _ := os.Getwd()
 	// Get the file name from the command line argument
 	filePath := filepath.Join(pwd, fileName)
-	println("Input file:", filePath)
-	println("")
+	//println("Input file:", filePath)
+	//println("")
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -54,11 +55,11 @@ func day7p2(fileName string) int {
 
 	for i, hand := range hands {
 		rank := i + 1
-		fmt.Printf("Rank: %d, OriginalHand: %s, Hand: %s, HandStrength: %+v\n", rank, hand.OriginalValue, hand.Value, hand.KindStrength)
+		//fmt.Printf("Rank: %d, OriginalHand: %s, Hand: %s, HandStrength: %+v\n", rank, hand.OriginalValue, hand.Value, hand.KindStrength)
 		acc += rank * hand.Bid
 	}
 
-	fmt.Printf("Total: %+v \n", acc)
+	//fmt.Printf("Total: %+v \n", acc)
 
 	// Check for errors during scanning
 	if err := scanner.Err(); err != nil {
