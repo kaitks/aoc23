@@ -1,4 +1,4 @@
-package day8v2
+package day8p2
 
 import (
 	"fmt"
@@ -23,29 +23,45 @@ func day8p2(fileName string) int {
 	instructionsStr := sections[0]
 	instructions := strings.Split(instructionsStr, "")
 	nodesStr := sections[1]
-	nodes := []Node{}
+	var nodes []Node
 	nodeMap := map[string]Node{}
+	var aNodes []Node
+
 	for _, line := range strings.Split(nodesStr, "\n") {
 		node := parseLine(line)
 		nodes = append(nodes, node)
 		nodeMap[node.Value] = node
+		if node.LastChar == "A" {
+			aNodes = append(aNodes, node)
+		}
 	}
 
-	currentNode := nodeMap["AAA"]
-	zNode := nodeMap["ZZZ"]
 	steps := 0
+	currentNodes := aNodes
+	zNodeCount := 0
+	aNodeCount := len(aNodes)
 
-	for currentNode != zNode {
+	for zNodeCount != aNodeCount {
 		for _, instruction := range instructions {
+			fmt.Printf("Current Nodes: %+v\n", currentNodes)
+			zNodeCount = 0
+			var destNodes []Node
 			steps++
-			currentNode = currentNode.move(instruction, &nodeMap)
-			if currentNode == zNode {
+			for _, node := range currentNodes {
+				dest := node.move(instruction, &nodeMap)
+				destNodes = append(destNodes, dest)
+				if dest.LastChar == "Z" {
+					zNodeCount++
+				}
+			}
+			currentNodes = destNodes
+			if zNodeCount == aNodeCount {
 				break
 			}
 		}
 	}
 
-	fmt.Printf("Total: %+v \n", steps)
+	fmt.Printf("Total: %+v\n", steps)
 
 	return steps
 }
@@ -55,13 +71,15 @@ func parseLine(line string) Node {
 	Value := parts[0]
 	Left := parts[1]
 	Right := parts[2]
-	return Node{Value, Left, Right}
+	LastChar := Value[len(Value)-1:]
+	return Node{Value, Left, Right, LastChar}
 }
 
 type Node struct {
-	Value string
-	Left  string
-	Right string
+	Value    string
+	Left     string
+	Right    string
+	LastChar string
 }
 
 func (node *Node) move(instruction string, nodeMap *map[string]Node) Node {
