@@ -121,22 +121,6 @@ func (loc *Loc) down() Loc {
 	return Loc{loc.H, loc.V + 1}
 }
 
-func right(h int, v int) (int, int) {
-	return h + 1, v
-}
-
-func left(h int, v int) (int, int) {
-	return h - 1, v
-}
-
-func up(h int, v int) (int, int) {
-	return h, v - 1
-}
-
-func down(h int, v int) (int, int) {
-	return h, v + 1
-}
-
 func (mapp *Map) get(h int, v int) (string, bool) {
 	if h < 0 || h >= mapp.hLength || v < 0 || v >= mapp.vLength {
 		return "", false
@@ -156,55 +140,49 @@ func (point *Point) move(mapp *Map) (Point, bool) {
 
 func (tile *Tile) move(next Tile, mapp *Map) (Tile, bool) {
 	var nextt Tile
-	nextH := -1
-	nextV := -1
+	nexttLoc := Loc{-1, -1}
+	nextLoc := next.toLoc()
 	hDelta := next.H - tile.H
 	vDelta := next.V - tile.V
 
 	switch next.Value {
 	case "|":
 		if hDelta == 0 {
-			nextH = next.H
-			nextV = next.V + vDelta
+			nexttLoc = Loc{nextLoc.H, nextLoc.V + vDelta}
 		}
 	case "-":
 		if vDelta == 0 {
-			nextH = next.H + hDelta
-			nextV = next.V
+			nexttLoc = Loc{nextLoc.H + hDelta, nextLoc.V}
 		}
 	case "L":
 		if vDelta == 1 {
-			nextH, nextV = right(next.H, next.V)
+			nexttLoc = nextLoc.right()
 		} else if hDelta == -1 {
-			nextH, nextV = up(next.H, next.V)
+			nexttLoc = nextLoc.up()
 		}
 	case "J":
 		if vDelta == 1 {
-			nextH, nextV = left(next.H, next.V)
+			nexttLoc = nextLoc.left()
 		} else if hDelta == 1 {
-			nextH, nextV = up(next.H, next.V)
+			nexttLoc = nextLoc.up()
 		}
 	case "7":
 		if hDelta == 1 {
-			nextH, nextV = down(next.H, next.V)
+			nexttLoc = nextLoc.down()
 		} else if vDelta == -1 {
-			nextH, nextV = left(next.H, next.V)
+			nexttLoc = nextLoc.left()
 		}
 	case "F":
 		if hDelta == -1 {
-			nextH, nextV = down(next.H, next.V)
+			nexttLoc = nextLoc.down()
 		} else if vDelta == -1 {
-			nextH, nextV = right(next.H, next.V)
+			nexttLoc = nextLoc.right()
 		}
 	}
-	if nextH >= 0 && nextV >= 0 {
-		nextValue, exists := (*mapp).get(nextH, nextV)
-		if exists {
-			nextt = Tile{nextH, nextV, nextValue}
-			return nextt, true
-		} else {
-			return next, false
-		}
+	nextValue, exists := (*mapp).get(nexttLoc.H, nexttLoc.V)
+	if exists {
+		nextt = Tile{nexttLoc.H, nexttLoc.V, nextValue}
+		return nextt, true
 	} else {
 		return next, false
 	}
