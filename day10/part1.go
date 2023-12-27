@@ -138,7 +138,7 @@ func down(h int, v int) (int, int) {
 }
 
 func (mapp *Map) get(h int, v int) (string, bool) {
-	if h < 0 || h > mapp.hLength || v < 0 || v > mapp.vLength {
+	if h < 0 || h >= mapp.hLength || v < 0 || v >= mapp.vLength {
 		return "", false
 	} else {
 		return mapp.Data[v][h], true
@@ -147,7 +147,11 @@ func (mapp *Map) get(h int, v int) (string, bool) {
 
 func (point *Point) move(mapp *Map) (Point, bool) {
 	nextt, canMove := point.current.move(point.next, mapp)
-	return Point{point.next, nextt}, canMove
+	if canMove {
+		return Point{point.next, nextt}, true
+	} else {
+		return *point, false
+	}
 }
 
 func (tile *Tile) move(next Tile, mapp *Map) (Tile, bool) {
