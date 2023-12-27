@@ -67,7 +67,7 @@ func part1(fileName string) int {
 			point = nextPoint
 			canMove = canMovee
 		}
-		if point.next.Value == "S" {
+		if point.next == sTile {
 			moves = thisMoves
 			break
 		}
