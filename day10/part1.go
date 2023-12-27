@@ -31,6 +31,7 @@ func part1(fileName string) int {
 
 	var sTile Tile
 	v := 0
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		row := strings.Split(line, "")
@@ -42,6 +43,9 @@ func part1(fileName string) int {
 		}
 		v++
 	}
+
+	hLength := len(tiles[0])
+	mapp := Map{tiles, hLength, v}
 
 	fmt.Printf("sTile: %+v\n", sTile)
 
@@ -70,12 +74,42 @@ type Tile struct {
 }
 
 type Point struct {
-	loc  Tile
-	next Tile
+	current Tile
+	next    Tile
+}
+
+type Map struct {
+	Data    [][]string
+	hLength int
+	vLength int
+}
+
+func right(h int, v int) (int, int) {
+	return h + 1, v
+}
+
+func left(h int, v int) (int, int) {
+	return h - 1, v
+}
+
+func up(h int, v int) (int, int) {
+	return h, v - 1
+}
+
+func down(h int, v int) (int, int) {
+	return h, v + 1
+}
+
+func (mapp *Map) get(h int, v int) (string, bool) {
+	if h < 0 || h > mapp.hLength || v < 0 || v > mapp.vLength {
+		return "", false
+	} else {
+		return mapp.Data[v][h], true
+	}
 }
 
 func (point *Point) move(mapp *[][]string) (Point, bool) {
-	nextt, canMove := point.loc.move(point.next, mapp)
+	nextt, canMove := point.current.move(point.next, mapp)
 	return Point{point.next, nextt}, canMove
 }
 
@@ -99,35 +133,27 @@ func (tile *Tile) move(next Tile, mapp *[][]string) (Tile, bool) {
 		}
 	case "L":
 		if vDelta == 1 {
-			nextH = next.H + 1
-			nextV = next.V
+			nextH, nextV = right(next.H, nextV)
 		} else if hDelta == -1 {
-			nextH = next.H
-			nextV = next.V - 1
+			nextH, nextV = up(next.H, nextV)
 		}
 	case "J":
 		if vDelta == 1 {
-			nextH = next.H - 1
-			nextV = next.V
+			nextH, nextV = left(next.H, nextV)
 		} else if hDelta == 1 {
-			nextH = next.H
-			nextV = next.V - 1
+			nextH, nextV = up(next.H, nextV)
 		}
 	case "7":
 		if hDelta == 1 {
-			nextH = next.H
-			nextV = next.V + 1
+			nextH, nextV = down(next.H, nextV)
 		} else if vDelta == -1 {
-			nextH = next.H - 1
-			nextV = next.V
+			nextH, nextV = left(next.H, nextV)
 		}
 	case "F":
 		if hDelta == -1 {
-			nextH = next.H
-			nextV = next.V + 1
+			nextH, nextV = down(next.H, nextV)
 		} else if vDelta == -1 {
-			nextH = next.H + 1
-			nextV = next.V
+			nextH, nextV = right(next.H, nextV)
 		}
 	}
 	canMove := false
@@ -135,6 +161,8 @@ func (tile *Tile) move(next Tile, mapp *[][]string) (Tile, bool) {
 		canMove = true
 		nextValue := (*mapp)[nextV][nextH]
 		nextt = Tile{nextH, nextV, nextValue}
+		return nextt, canMove
+	} else {
+		return next, canMove
 	}
-	return nextt, canMove
 }
