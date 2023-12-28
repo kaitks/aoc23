@@ -56,11 +56,18 @@ func solution(fileName string) int {
 
 	sNexts := lo.FilterMap([]Loc{sLoc.up(), sLoc.down(), sLoc.right(), sLoc.left()}, func(loc Loc, index int) (Tile, bool) {
 		Value, exists := mapp.get(loc.H, loc.V)
-		validPipe := exists && Value != "."
-		if validPipe {
+		isValidPipe := false
+		if exists {
+			nextTile := Tile{loc.H, loc.V, Value}
+			_, canMove := sTile.move(nextTile, &mapp)
+			if canMove {
+				isValidPipe = true
+			}
+		}
+		if isValidPipe {
 			sNextIndex += strconv.Itoa(index)
 		}
-		return Tile{loc.H, loc.V, Value}, validPipe
+		return Tile{loc.H, loc.V, Value}, isValidPipe
 	})
 
 	sRealValue := "."
