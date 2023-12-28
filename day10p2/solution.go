@@ -51,10 +51,31 @@ func solution(fileName string) int {
 
 	sLoc := sTile.toLoc()
 
-	sNexts := lo.FilterMap([]Loc{sLoc.up(), sLoc.down(), sLoc.right(), sLoc.left()}, func(loc Loc, _ int) (Tile, bool) {
+	sNextIndex := ""
+
+	sNexts := lo.FilterMap([]Loc{sLoc.up(), sLoc.down(), sLoc.right(), sLoc.left()}, func(loc Loc, index int) (Tile, bool) {
 		Value, exists := mapp.get(loc.H, loc.V)
+		if exists {
+			sNextIndex += string(rune(index))
+		}
 		return Tile{loc.H, loc.V, Value}, exists
 	})
+
+	sRealValue := "."
+	switch sNextIndex {
+	case "01":
+		sRealValue = "|"
+	case "02":
+		sRealValue = "L"
+	case "03":
+		sRealValue = "J"
+	case "12":
+		sRealValue = "F"
+	case "13":
+		sRealValue = "7"
+	case "23":
+		sRealValue = "-"
+	}
 
 	moves := mapset.NewSet[Loc]()
 
@@ -83,7 +104,7 @@ func solution(fileName string) int {
 			loc := Loc{h, v}
 			if moves.Contains(loc) {
 				Value, _ := mapp.get(loc.H, loc.V)
-				if LegitCross.Contains(Value) {
+				if LegitCross.Contains(Value) || (Value == "S" && LegitCross.Contains(sRealValue)) {
 					inversions++
 				}
 			} else {

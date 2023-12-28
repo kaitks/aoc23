@@ -29,3 +29,10 @@ func TestSolutionT2(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestSolutionT3(t *testing.T) {
+	result := solution("test_data_3")
+	if result != 10 {
+		t.Fail()
+	}
+}
