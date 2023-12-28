@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func solution(fileName string) int {
+func solution(fileName string, expandRate int) int {
 	pwd, _ := os.Getwd()
 	// Get the file name from the command line argument
 	filePath := filepath.Join(pwd, fileName)
@@ -80,6 +80,7 @@ func solution(fileName string) int {
 	slices.Sort(emptyColumns)
 
 	distances := []int{}
+	multiplier := expandRate - 1
 
 	for _, galaxyPair := range galaxyPairs {
 		first := galaxyPair[0]
@@ -90,7 +91,7 @@ func solution(fileName string) int {
 		maxV := max(first.V, second.V)
 		crossH := countElementsInRange(emptyColumns, minH, maxH)
 		crossV := countElementsInRange(emptyRows, minV, maxV)
-		distance := maxH - minH + maxV - minV + crossH + crossV
+		distance := maxH - minH + maxV - minV + crossH*multiplier + crossV*multiplier
 		distances = append(distances, distance)
 	}
 
