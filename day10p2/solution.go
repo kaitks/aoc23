@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -55,10 +56,11 @@ func solution(fileName string) int {
 
 	sNexts := lo.FilterMap([]Loc{sLoc.up(), sLoc.down(), sLoc.right(), sLoc.left()}, func(loc Loc, index int) (Tile, bool) {
 		Value, exists := mapp.get(loc.H, loc.V)
-		if exists {
-			sNextIndex += string(rune(index))
+		validPipe := exists && Value != "."
+		if validPipe {
+			sNextIndex += strconv.Itoa(index)
 		}
-		return Tile{loc.H, loc.V, Value}, exists
+		return Tile{loc.H, loc.V, Value}, validPipe
 	})
 
 	sRealValue := "."

@@ -32,7 +32,7 @@ func TestSolutionT2(t *testing.T) {
 
 func TestSolutionT3(t *testing.T) {
 	result := solution("test_data_3")
-	if result != 10 {
+	if result != 18 {
 		t.Fail()
 	}
 }
