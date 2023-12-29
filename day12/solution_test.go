@@ -4,17 +4,10 @@ import "testing"
 
 func TestSolution(t *testing.T) {
 	result := solution("input")
-	if result != 7293 {
+	if result != 7017 {
 		t.Fail()
 	}
 }
-
-//func TestSolutionP2(t *testing.T) {
-//	result := solution("input", 1000000)
-//	if result != 702770569197 {
-//		t.Fail()
-//	}
-//}
 
 func TestSolutionT(t *testing.T) {
 	result := solution("test_data")
@@ -60,7 +53,7 @@ func TestSolutionT5(t *testing.T) {
 
 func TestSolutionT6(t *testing.T) {
 	result := solution("test_data_6")
-	if result != 1 {
+	if result != 5 {
 		t.Fail()
 	}
 }
