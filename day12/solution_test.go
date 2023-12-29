@@ -4,7 +4,7 @@ import "testing"
 
 func TestSolution(t *testing.T) {
 	result := solution("input")
-	if result != 567 {
+	if result != 7293 {
 		t.Fail()
 	}
 }
@@ -47,6 +47,20 @@ func TestSolutionT3(t *testing.T) {
 func TestSolutionT4(t *testing.T) {
 	result := solution("test_data_4")
 	if result != 2 {
+		t.Fail()
+	}
+}
+
+func TestSolutionT5(t *testing.T) {
+	result := solution("test_data_5")
+	if result != 1 {
+		t.Fail()
+	}
+}
+
+func TestSolutionT6(t *testing.T) {
+	result := solution("test_data_6")
+	if result != 1 {
 		t.Fail()
 	}
 }

@@ -35,7 +35,7 @@ func solution(fileName string) int {
 
 	for _, row := range rows {
 		wayToSolve := 0
-		process(row, &wayToSolve)
+		process(row, &wayToSolve, 0, 0, 0)
 		fmt.Printf("Row: %+v\n", row.Value)
 		fmt.Printf("Onsen Length: %+v\n", row.Onsen)
 		fmt.Printf("Way To Solve: %+v\n\n", wayToSolve)
@@ -52,18 +52,17 @@ type Row struct {
 	Onsen []int
 }
 
-func process(row Row, wayToSolve *int) {
-	onsenLength := 0
+func process(row Row, wayToSolve *int, valueIndex int, onsenIndex int, onsenLength int) {
 outerLoop:
-	for i := 0; i < len(row.Value); i++ {
+	for i := valueIndex; i < len(row.Value); i++ {
 		str := string(row.Value[i])
-		if len(row.Onsen) != 0 {
-			onsenTarget := row.Onsen[0]
+		if onsenIndex < len(row.Onsen) {
+			onsenTarget := row.Onsen[onsenIndex]
 			switch str {
 			case ".":
 				if onsenLength > 0 {
 					if onsenLength == onsenTarget {
-						process(Row{row.Value[i:], row.Onsen[1:]}, wayToSolve)
+						process(Row{row.Value, row.Onsen}, wayToSolve, i, onsenIndex+1, 0)
 						break outerLoop
 					} else {
 						break outerLoop
@@ -75,19 +74,27 @@ outerLoop:
 					break outerLoop
 				}
 			case "?":
-				process(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, wayToSolve)
-				process(Row{replaceStringAtIndex(row.Value, i, "#"), row.Onsen}, wayToSolve)
+				process(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, wayToSolve, i, onsenIndex, onsenLength)
+				process(Row{replaceStringAtIndex(row.Value, i, "#"), row.Onsen}, wayToSolve, i, onsenIndex, onsenLength)
 				break outerLoop
 			}
 
 			if i == len(row.Value)-1 {
-				if onsenLength == onsenTarget && len(row.Onsen) == 1 {
+				if onsenLength == onsenTarget && len(row.Onsen)-1 == onsenIndex {
+					fmt.Printf("Solution: %+v\n", row.Value)
 					*wayToSolve++
 				}
 			}
 		} else {
-			if i == len(row.Value)-1 {
-				if str != "#" {
+			switch str {
+			case "#":
+				break outerLoop
+			case "?":
+				process(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, wayToSolve, i, onsenIndex, onsenLength)
+				break outerLoop
+			case ".":
+				if i == len(row.Value)-1 {
+					fmt.Printf("Solution: %+v\n", replaceStringAtIndex(row.Value, i, "."))
 					*wayToSolve++
 				}
 			}
