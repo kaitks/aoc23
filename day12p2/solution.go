@@ -1,4 +1,4 @@
-package day12
+package day12p2
 
 import (
 	"fmt"
@@ -23,20 +23,28 @@ func solution(fileName string) int {
 
 	for _, lineStr := range lines {
 		sections := strings.Fields(lineStr)
-		Onsen := []int{}
+		var Onsen []int
 		for _, str := range strings.Split(sections[1], ",") {
 			count, _ := strconv.Atoi(str)
 			Onsen = append(Onsen, count)
 		}
-		rows = append(rows, Row{sections[0], Onsen})
+		var ValueRepeated []string
+		for i := 0; i < 5; i++ {
+			ValueRepeated = append(ValueRepeated, sections[0])
+		}
+		var onsenRepeated []int
+		for i := 0; i < 5; i++ {
+			onsenRepeated = append(onsenRepeated, Onsen...)
+		}
+		rows = append(rows, Row{strings.Join(ValueRepeated, "?"), onsenRepeated})
 	}
 
 	acc := 0
 
 	for _, row := range rows {
 		wayToSolve := 0
-		fmt.Printf("Row: %+v\n", row.Value)
-		fmt.Printf("Onsen Length: %+v\n", row.Onsen)
+		//fmt.Printf("Row: %+v\n", row.Value)
+		//fmt.Printf("Onsen Length: %+v\n", row.Onsen)
 		process(row, &wayToSolve, 0, 0, 0)
 		fmt.Printf("Way To Solve: %+v\n\n", wayToSolve)
 		acc += wayToSolve
@@ -81,7 +89,7 @@ outerLoop:
 
 			if i == len(row.Value)-1 {
 				if onsenLength == onsenTarget && len(row.Onsen)-1 == onsenIndex {
-					fmt.Printf("Solution: %+v\n", row.Value)
+					//fmt.Printf("Solution: %+v\n", row.Value)
 					*wayToSolve++
 				}
 			}
@@ -94,7 +102,7 @@ outerLoop:
 				break outerLoop
 			case ".":
 				if i == len(row.Value)-1 {
-					fmt.Printf("Solution: %+v\n", replaceStringAtIndex(row.Value, i, "."))
+					//fmt.Printf("Solution: %+v\n", replaceStringAtIndex(row.Value, i, "."))
 					*wayToSolve++
 				}
 			}
