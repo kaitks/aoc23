@@ -2,6 +2,7 @@ package day12p2
 
 import (
 	"fmt"
+	"github.com/samber/lo"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -43,8 +44,8 @@ func solution(fileName string) int {
 
 	for _, row := range rows {
 		wayToSolve := 0
-		//fmt.Printf("Row: %+v\n", row.Value)
-		//fmt.Printf("Onsen Length: %+v\n", row.Onsen)
+		fmt.Printf("Row: %+v\n", row.Value)
+		fmt.Printf("Onsen Length: %+v\n", row.Onsen)
 		process(row, &wayToSolve, 0, 0, 0)
 		fmt.Printf("Way To Solve: %+v\n\n", wayToSolve)
 		acc += wayToSolve
@@ -65,6 +66,10 @@ outerLoop:
 	for i := valueIndex; i < len(row.Value); i++ {
 		str := string(row.Value[i])
 		if onsenIndex < len(row.Onsen) { // onsen still haven't matched
+			if len(row.Value)-i+1+onsenLength < lo.Sum(row.Onsen[onsenIndex:]) {
+				break outerLoop
+			}
+
 			onsenTarget := row.Onsen[onsenIndex]
 			switch str {
 			case ".":
