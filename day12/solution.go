@@ -35,9 +35,9 @@ func solution(fileName string) int {
 
 	for _, row := range rows {
 		wayToSolve := 0
-		process(row, &wayToSolve, 0, 0, 0)
 		fmt.Printf("Row: %+v\n", row.Value)
 		fmt.Printf("Onsen Length: %+v\n", row.Onsen)
+		process(row, &wayToSolve, 0, 0, 0)
 		fmt.Printf("Way To Solve: %+v\n\n", wayToSolve)
 		acc += wayToSolve
 	}
