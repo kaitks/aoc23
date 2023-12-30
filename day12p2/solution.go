@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func solution(fileName string) int {
+func solution(fileName string, repeat int) int {
 	pwd, _ := os.Getwd()
 	// Get the file name from the command line argument
 	filePath := filepath.Join(pwd, fileName)
@@ -30,11 +30,11 @@ func solution(fileName string) int {
 			Onsen = append(Onsen, count)
 		}
 		var ValueRepeated []string
-		for i := 0; i < 5; i++ {
+		for i := 0; i < repeat; i++ {
 			ValueRepeated = append(ValueRepeated, sections[0])
 		}
 		var onsenRepeated []int
-		for i := 0; i < 5; i++ {
+		for i := 0; i < repeat; i++ {
 			onsenRepeated = append(onsenRepeated, Onsen...)
 		}
 		rows = append(rows, Row{strings.Join(ValueRepeated, "?"), onsenRepeated})
@@ -62,14 +62,15 @@ type Row struct {
 }
 
 func process(row Row, wayToSolve *int, valueIndex int, onsenIndex int, onsenLength int) {
+	onsenTargetLength := lo.Sum(row.Onsen[onsenIndex:])
 outerLoop:
 	for i := valueIndex; i < len(row.Value); i++ {
-		str := string(row.Value[i])
-		if onsenIndex < len(row.Onsen) { // onsen still haven't matched
-			if len(row.Value)-i+1+onsenLength < lo.Sum(row.Onsen[onsenIndex:]) {
-				break outerLoop
-			}
+		if len(row.Value)-i+1+onsenLength < onsenTargetLength {
+			break outerLoop
+		}
 
+		str := string(row.Value[i])
+		if onsenIndex < len(row.Onsen) { // onsen haven't fully matched
 			onsenTarget := row.Onsen[onsenIndex]
 			switch str {
 			case ".":
