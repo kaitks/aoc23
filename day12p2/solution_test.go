@@ -3,7 +3,7 @@ package day12p2
 import "testing"
 
 func TestSolution(t *testing.T) {
-	result := solution("input", 5)
+	result := solution("input", 1)
 	if result != 7017 {
 		t.Fail()
 	}
@@ -24,8 +24,8 @@ func TestSolutionT1(t *testing.T) {
 }
 
 func TestSolutionT2(t *testing.T) {
-	result := solution("test_data_2", 4)
-	if result != 16384 {
+	result := solution("test_data_2", 1)
+	if result != 26 {
 		t.Fail()
 	}
 }

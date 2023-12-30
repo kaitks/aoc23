@@ -61,21 +61,23 @@ type Row struct {
 	Onsen []int
 }
 
-func process(row Row, wayToSolve *int, valueIndex int, onsenIndex int, onsenLength int) {
+func process(row Row, wayToSolve *int, valueIndex int, onsenIndex int, accOnsenLength int) {
 	onsenTargetLength := lo.Sum(row.Onsen[onsenIndex:])
+	rowLength := len(row.Value)
+	onsenLength := len(row.Onsen)
 outerLoop:
-	for i := valueIndex; i < len(row.Value); i++ {
-		if len(row.Value)-i+1+onsenLength < onsenTargetLength {
+	for i := valueIndex; i < rowLength; i++ {
+		if rowLength-i+1+accOnsenLength < onsenTargetLength {
 			break outerLoop
 		}
 
 		str := string(row.Value[i])
-		if onsenIndex < len(row.Onsen) { // onsen haven't fully matched
+		if onsenIndex < onsenLength { // onsen haven't fully matched
 			onsenTarget := row.Onsen[onsenIndex]
 			switch str {
 			case ".":
-				if onsenLength > 0 {
-					if onsenLength == onsenTarget {
+				if accOnsenLength > 0 {
+					if accOnsenLength == onsenTarget {
 						process(Row{row.Value, row.Onsen}, wayToSolve, i, onsenIndex+1, 0)
 						break outerLoop
 					} else {
@@ -83,18 +85,18 @@ outerLoop:
 					}
 				}
 			case "#":
-				onsenLength++
-				if onsenLength > onsenTarget {
+				accOnsenLength++
+				if accOnsenLength > onsenTarget {
 					break outerLoop
 				}
 			case "?":
-				process(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, wayToSolve, i, onsenIndex, onsenLength)
-				process(Row{replaceStringAtIndex(row.Value, i, "#"), row.Onsen}, wayToSolve, i, onsenIndex, onsenLength)
+				process(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, wayToSolve, i, onsenIndex, accOnsenLength)
+				process(Row{replaceStringAtIndex(row.Value, i, "#"), row.Onsen}, wayToSolve, i, onsenIndex, accOnsenLength)
 				break outerLoop
 			}
 
-			if i == len(row.Value)-1 {
-				if onsenLength == onsenTarget && len(row.Onsen)-1 == onsenIndex {
+			if i == rowLength-1 {
+				if accOnsenLength == onsenTarget && onsenLength-1 == onsenIndex {
 					//fmt.Printf("Solution: %+v\n", row.Value)
 					*wayToSolve++
 				}
@@ -104,10 +106,10 @@ outerLoop:
 			case "#":
 				break outerLoop
 			case "?":
-				process(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, wayToSolve, i, onsenIndex, onsenLength)
+				process(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, wayToSolve, i, onsenIndex, accOnsenLength)
 				break outerLoop
 			case ".":
-				if i == len(row.Value)-1 {
+				if i == rowLength-1 {
 					//fmt.Printf("Solution: %+v\n", replaceStringAtIndex(row.Value, i, "."))
 					*wayToSolve++
 				}
@@ -117,9 +119,5 @@ outerLoop:
 }
 
 func replaceStringAtIndex(str string, index int, replacement string) string {
-	if index >= 0 && index < len(str) {
-		return str[:index] + replacement + str[index+1:] // Combine parts
-	} else {
-		return str // Handle invalid index
-	}
+	return str[:index] + replacement + str[index+1:] // Combine parts
 }
