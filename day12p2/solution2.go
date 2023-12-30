@@ -69,8 +69,16 @@ func process2(row Row, valueIndex int, onsenIndex int, accOnsenLength int) int {
 			onsenTarget := row.Onsen[onsenIndex]
 			switch str {
 			case "?":
-				return process2(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, i, onsenIndex, accOnsenLength) +
-					process2(Row{replaceStringAtIndex(row.Value, i, "#"), row.Onsen}, i, onsenIndex, accOnsenLength)
+				if accOnsenLength > 0 {
+					if accOnsenLength < onsenTarget {
+						return process2(Row{replaceStringAtIndex(row.Value, i, "#"), row.Onsen}, i, onsenIndex, accOnsenLength)
+					} else if accOnsenLength == onsenTarget {
+						return process2(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, i, onsenIndex, accOnsenLength)
+					}
+				} else {
+					return process2(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, i, onsenIndex, accOnsenLength) +
+						process2(Row{replaceStringAtIndex(row.Value, i, "#"), row.Onsen}, i, onsenIndex, accOnsenLength)
+				}
 			case "#":
 				accOnsenLength++
 				if accOnsenLength > onsenTarget {
