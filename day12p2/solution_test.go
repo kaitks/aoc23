@@ -24,8 +24,8 @@ func TestSolutionT1(t *testing.T) {
 }
 
 func TestSolutionT2(t *testing.T) {
-	result := solution("test_data_2", 1)
-	if result != 26 {
+	result := solution("test_data_2", 3)
+	if result != 264342 {
 		t.Fail()
 	}
 }

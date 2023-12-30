@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func solution(fileName string, repeat int) int {
+func solution2(fileName string, repeat int) int {
 	pwd, _ := os.Getwd()
 	// Get the file name from the command line argument
 	filePath := filepath.Join(pwd, fileName)
@@ -43,10 +43,9 @@ func solution(fileName string, repeat int) int {
 	acc := 0
 
 	for _, row := range rows {
-		wayToSolve := 0
 		fmt.Printf("Row: %+v\n", row.Value)
 		fmt.Printf("Onsen Length: %+v\n", row.Onsen)
-		process(row, &wayToSolve, 0, 0, 0)
+		wayToSolve := process2(row, 0, 0, 0)
 		fmt.Printf("Way To Solve: %+v\n\n", wayToSolve)
 		acc += wayToSolve
 	}
@@ -56,68 +55,54 @@ func solution(fileName string, repeat int) int {
 	return acc
 }
 
-type Row struct {
-	Value string
-	Onsen []int
-}
-
-func process(row Row, wayToSolve *int, valueIndex int, onsenIndex int, accOnsenLength int) {
-	onsenTargetLength := lo.Sum(row.Onsen[onsenIndex:]) + len(row.Onsen[onsenIndex:]) - 1
+func process2(row Row, valueIndex int, onsenIndex int, accOnsenLength int) int {
+	minRemainValueLength := lo.Sum(row.Onsen[onsenIndex:]) + max(len(row.Onsen[onsenIndex:])-1, 0)
 	rowLength := len(row.Value)
 	onsenLength := len(row.Onsen)
-outerLoop:
 	for i := valueIndex; i < rowLength; i++ {
-		if rowLength-i+1+accOnsenLength < onsenTargetLength {
-			break outerLoop
+		if rowLength-i+1+accOnsenLength < minRemainValueLength {
+			return 0
 		}
 
 		str := string(row.Value[i])
 		if onsenIndex < onsenLength { // onsen haven't fully matched
 			onsenTarget := row.Onsen[onsenIndex]
 			switch str {
-			case ".":
-				if accOnsenLength > 0 {
-					if accOnsenLength == onsenTarget {
-						process(Row{row.Value, row.Onsen}, wayToSolve, i, onsenIndex+1, 0)
-						break outerLoop
-					} else {
-						break outerLoop
-					}
-				}
+			case "?":
+				return process2(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, i, onsenIndex, accOnsenLength) +
+					process2(Row{replaceStringAtIndex(row.Value, i, "#"), row.Onsen}, i, onsenIndex, accOnsenLength)
 			case "#":
 				accOnsenLength++
 				if accOnsenLength > onsenTarget {
-					break outerLoop
+					return 0
 				}
-			case "?":
-				process(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, wayToSolve, i, onsenIndex, accOnsenLength)
-				process(Row{replaceStringAtIndex(row.Value, i, "#"), row.Onsen}, wayToSolve, i, onsenIndex, accOnsenLength)
-				break outerLoop
+			case ".":
+				if accOnsenLength > 0 {
+					if accOnsenLength == onsenTarget {
+						return process2(Row{row.Value, row.Onsen}, i, onsenIndex+1, 0)
+					} else {
+						return 0
+					}
+				}
 			}
 
-			if i == rowLength-1 {
-				if accOnsenLength == onsenTarget && onsenLength-1 == onsenIndex {
-					//fmt.Printf("Solution: %+v\n", row.Value)
-					*wayToSolve++
-				}
+			if i == rowLength-1 && onsenIndex == onsenLength-1 && accOnsenLength == onsenTarget {
+				//fmt.Printf("Solution: %+v\n", row.Value)
+				return 1
 			}
 		} else { // onsen matched, now the remaining str should be .
 			switch str {
-			case "#":
-				break outerLoop
 			case "?":
-				process(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, wayToSolve, i, onsenIndex, accOnsenLength)
-				break outerLoop
+				return process2(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, i, onsenIndex, accOnsenLength)
+			case "#":
+				return 0
 			case ".":
 				if i == rowLength-1 {
-					//fmt.Printf("Solution: %+v\n", replaceStringAtIndex(row.Value, i, "."))
-					*wayToSolve++
+					//fmt.Printf("Solution: %+v\n", row.Value)
+					return 1
 				}
 			}
 		}
 	}
-}
-
-func replaceStringAtIndex(str string, index int, replacement string) string {
-	return str[:index] + replacement + str[index+1:] // Combine parts
+	return 0
 }
