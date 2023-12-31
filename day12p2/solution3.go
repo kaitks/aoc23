@@ -118,8 +118,3 @@ func memoizedDfs() func(string, []int) int {
 	return dfs
 }
 
-type IntSlice []int
-
-func (s IntSlice) equal(a interface{}) bool {
-	return reflect.DeepEqual(a, s)
-}
