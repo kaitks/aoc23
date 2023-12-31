@@ -64,8 +64,10 @@ func memoizedDfs() func(string, []int) int {
 	dfs = func(sequence string, groups []int) (v int) {
 		groupsHash := fmt.Sprintf("%v", groups)
 		defer func() {
-			cache[sequence] = make(map[string]int)
-			cache[sequence][groupsHash] = v
+			if _, ok := cache[sequence][groupsHash]; !ok {
+				cache[sequence] = make(map[string]int)
+				cache[sequence][groupsHash] = v
+			}
 		}()
 		if v, ok := cache[sequence][groupsHash]; ok {
 			return v
