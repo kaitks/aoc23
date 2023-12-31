@@ -45,6 +45,7 @@ func solution2(fileName string, repeat int) int {
 	for _, row := range rows {
 		fmt.Printf("Row: %+v\n", row.Value)
 		fmt.Printf("Onsen Length: %+v\n", row.Onsen)
+		process2 := memoizedProcess2()
 		wayToSolve := process2(row, 0, 0, 0)
 		fmt.Printf("Way To Solve: %+v\n\n", wayToSolve)
 		acc += wayToSolve
@@ -55,62 +56,74 @@ func solution2(fileName string, repeat int) int {
 	return acc
 }
 
-func process2(row Row, valueIndex int, onsenIndex int, accOnsenLength int) int {
-	minRemainValueLength := lo.Sum(row.Onsen[onsenIndex:]) + max(len(row.Onsen[onsenIndex:])-1, 0)
-	rowLength := len(row.Value)
-	onsenLength := len(row.Onsen)
-	for i := valueIndex; i < rowLength; i++ {
-		if rowLength-i+1+accOnsenLength < minRemainValueLength {
-			return 0
+func memoizedProcess2() func(Row, int, int, int) int {
+	cache := map[string]int{}
+	var process2 func(row Row, valueIndex int, onsenIndex int, accOnsenLength int) int
+	process2 = func(row Row, valueIndex int, onsenIndex int, accOnsenLength int) (way int) {
+		defer func() {
+			cache[row.Value] = way
+		}()
+		result, exists := cache[row.Value]
+		if exists {
+			return result
 		}
+		minRemainValueLength := lo.Sum(row.Onsen[onsenIndex:]) + max(len(row.Onsen[onsenIndex:])-1, 0)
+		rowLength := len(row.Value)
+		onsenLength := len(row.Onsen)
+		for i := valueIndex; i < rowLength; i++ {
+			if rowLength-i+1+accOnsenLength < minRemainValueLength {
+				return 0
+			}
 
-		str := string(row.Value[i])
-		if onsenIndex < onsenLength { // onsen haven't fully matched
-			onsenTarget := row.Onsen[onsenIndex]
-			switch str {
-			case "?":
-				if accOnsenLength > 0 {
-					if accOnsenLength < onsenTarget {
-						return process2(Row{replaceStringAtIndex(row.Value, i, "#"), row.Onsen}, i, onsenIndex, accOnsenLength)
-					} else if accOnsenLength == onsenTarget {
-						return process2(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, i, onsenIndex, accOnsenLength)
-					}
-				} else {
-					return process2(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, i, onsenIndex, accOnsenLength) +
-						process2(Row{replaceStringAtIndex(row.Value, i, "#"), row.Onsen}, i, onsenIndex, accOnsenLength)
-				}
-			case "#":
-				accOnsenLength++
-				if accOnsenLength > onsenTarget {
-					return 0
-				}
-			case ".":
-				if accOnsenLength > 0 {
-					if accOnsenLength == onsenTarget {
-						return process2(Row{row.Value, row.Onsen}, i, onsenIndex+1, 0)
+			str := string(row.Value[i])
+			if onsenIndex < onsenLength { // onsen haven't fully matched
+				onsenTarget := row.Onsen[onsenIndex]
+				switch str {
+				case "?":
+					if accOnsenLength > 0 {
+						if accOnsenLength < onsenTarget {
+							return process2(Row{replaceStringAtIndex(row.Value, i, "#"), row.Onsen}, i, onsenIndex, accOnsenLength)
+						} else if accOnsenLength == onsenTarget {
+							return process2(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, i, onsenIndex, accOnsenLength)
+						}
 					} else {
+						return process2(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, i, onsenIndex, accOnsenLength) +
+							process2(Row{replaceStringAtIndex(row.Value, i, "#"), row.Onsen}, i, onsenIndex, accOnsenLength)
+					}
+				case "#":
+					accOnsenLength++
+					if accOnsenLength > onsenTarget {
 						return 0
 					}
+				case ".":
+					if accOnsenLength > 0 {
+						if accOnsenLength == onsenTarget {
+							return process2(Row{row.Value, row.Onsen}, i, onsenIndex+1, 0)
+						} else {
+							return 0
+						}
+					}
 				}
-			}
 
-			if i == rowLength-1 && onsenIndex == onsenLength-1 && accOnsenLength == onsenTarget {
-				//fmt.Printf("Solution: %+v\n", row.Value)
-				return 1
-			}
-		} else { // onsen matched, now the remaining str should be .
-			switch str {
-			case "?":
-				return process2(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, i, onsenIndex, accOnsenLength)
-			case "#":
-				return 0
-			case ".":
-				if i == rowLength-1 {
+				if i == rowLength-1 && onsenIndex == onsenLength-1 && accOnsenLength == onsenTarget {
 					//fmt.Printf("Solution: %+v\n", row.Value)
 					return 1
 				}
+			} else { // onsen matched, now the remaining str should be .
+				switch str {
+				case "?":
+					return process2(Row{replaceStringAtIndex(row.Value, i, "."), row.Onsen}, i, onsenIndex, accOnsenLength)
+				case "#":
+					return 0
+				case ".":
+					if i == rowLength-1 {
+						//fmt.Printf("Solution: %+v\n", row.Value)
+						return 1
+					}
+				}
 			}
 		}
+		return 0
 	}
-	return 0
+	return process2
 }
