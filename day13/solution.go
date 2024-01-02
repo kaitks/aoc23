@@ -1,6 +1,7 @@
 package day13
 
 import (
+	"aoc23/utils"
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/samber/lo"
@@ -63,11 +64,11 @@ func process(area Area) int {
 			copy(hRowsNew, hRows)
 			copy(vRowsNew, vRows)
 			if hRows[v][h] == '.' {
-				hRowsNew[v] = replaceStringAtIndex(hRowsNew[v], h, "#")
-				vRowsNew[h] = replaceStringAtIndex(vRowsNew[h], v, "#")
+				hRowsNew[v] = utils.ReplaceStringAtIndex(hRowsNew[v], h, "#")
+				vRowsNew[h] = utils.ReplaceStringAtIndex(vRowsNew[h], v, "#")
 			} else {
-				hRowsNew[v] = replaceStringAtIndex(hRowsNew[v], h, ".")
-				vRowsNew[h] = replaceStringAtIndex(vRowsNew[h], v, ".")
+				hRowsNew[v] = utils.ReplaceStringAtIndex(hRowsNew[v], h, ".")
+				vRowsNew[h] = utils.ReplaceStringAtIndex(vRowsNew[h], v, ".")
 			}
 			vM, hM := findSum(hRowsNew, vRowsNew)
 			finalVM := vM.Difference(originVM)
@@ -138,14 +139,6 @@ func findMirror(row string) mapset.Set[int] {
 		}
 	}
 	return mirros
-}
-
-func replaceStringAtIndex(str string, index int, replacement string) string {
-	if index >= 0 && index < len(str) {
-		return str[:index] + replacement + str[index+1:] // Combine parts
-	} else {
-		return str // Handle invalid index
-	}
 }
 
 func memoize(f func(string) mapset.Set[int]) func(string) mapset.Set[int] {
