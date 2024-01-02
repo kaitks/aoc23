@@ -2,6 +2,7 @@ package day13
 
 import (
 	"fmt"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/samber/lo"
 	"os"
 	"path/filepath"
@@ -20,7 +21,13 @@ func solution(fileName string) int {
 	data := string(raw)
 	areas := lo.Map(strings.Split(data, "\n\n"), func(area string, _ int) Area {
 		rows := strings.Split(area, "\n")
-		return Area{area, rows, len(rows[0]), len(rows)}
+		rowsV := []string{}
+		for i := 0; i < len(rows[0]); i++ {
+			rowsV = append(rowsV, strings.Join(lo.Map(rows, func(row string, _ int) string {
+				return string(row[i])
+			}), ""))
+		}
+		return Area{area, rows, rowsV, len(rows[0]), len(rows)}
 	})
 
 	acc := 0
@@ -38,62 +45,56 @@ func solution(fileName string) int {
 }
 
 type Area struct {
-	toString string
-	Rows     []string
-	HLength  int
-	VLength  int
+	toString       string
+	HorizontalRows []string
+	VerticalRows   []string
+	HLength        int
+	VLength        int
 }
 
 func process(area Area) int {
-	var possibleVerticalMirrors []int
+	possibleVerticalMirrors := mapset.NewSet[int]()
 	for i := 0; i < area.HLength-1; i++ {
-		possibleVerticalMirrors = append(possibleVerticalMirrors, i)
+		possibleVerticalMirrors.Add(i)
 	}
-	for _, row := range area.Rows {
-		var tempVM []int
-		for _, i := range possibleVerticalMirrors {
-			isMatch := true
-			for j := 0; i-j >= 0 && i+j+1 < area.HLength; j++ {
-				if row[i-j] != row[i+j+1] {
-					isMatch = false
-					break
-				}
-			}
-			if isMatch {
-				tempVM = append(tempVM, i)
-			}
-		}
-		possibleVerticalMirrors = tempVM
+	for _, row := range area.HorizontalRows {
+		mirros := findMirror(row)
+		possibleVerticalMirrors = possibleVerticalMirrors.Intersect(mirros)
 	}
-	fmt.Printf("Vertical Mirror: %+v\n", possibleVerticalMirrors)
+	fmt.Printf("Vertical Mirror: %+v\n", possibleVerticalMirrors.ToSlice())
 
-	var possibleHorizontalMirrors []int
+	possibleHorizontalMirrors := mapset.NewSet[int]()
 	for i := 0; i < area.VLength-1; i++ {
-		possibleHorizontalMirrors = append(possibleHorizontalMirrors, i)
+		possibleHorizontalMirrors.Add(i)
 	}
-	for c := 0; c < area.HLength; c++ {
-		var tempHM []int
-		for _, i := range possibleHorizontalMirrors {
-			isMatch := true
-			for j := 0; i-j >= 0 && i+j+1 < area.VLength; j++ {
-				if area.Rows[i-j][c] != area.Rows[i+j+1][c] {
-					isMatch = false
-					break
-				}
-			}
-			if isMatch {
-				tempHM = append(tempHM, i)
-			}
-			possibleHorizontalMirrors = tempHM
-		}
+	for _, row := range area.VerticalRows {
+		mirros := findMirror(row)
+		possibleHorizontalMirrors = possibleHorizontalMirrors.Intersect(mirros)
 	}
-	fmt.Printf("Horizontal Mirror: %+v\n\n", possibleHorizontalMirrors)
+	fmt.Printf("Horizontal Mirror: %+v\n", possibleHorizontalMirrors.ToSlice())
 
-	vSum := lo.Sum(lo.Map(possibleVerticalMirrors, func(m int, i int) int {
+	vSum := lo.Sum(lo.Map(possibleVerticalMirrors.ToSlice(), func(m int, i int) int {
 		return m + 1
 	}))
-	hSum := lo.Sum(lo.Map(possibleHorizontalMirrors, func(m int, i int) int {
+	hSum := lo.Sum(lo.Map(possibleHorizontalMirrors.ToSlice(), func(m int, i int) int {
 		return (m + 1) * 100
 	}))
 	return vSum + hSum
+}
+
+func findMirror(row string) mapset.Set[int] {
+	mirros := mapset.NewSet[int]()
+	for i := 0; i < len(row)-1; i++ {
+		isMatch := true
+		for j := 0; i-j >= 0 && i+j+1 < len(row); j++ {
+			if row[i-j] != row[i+j+1] {
+				isMatch = false
+				break
+			}
+		}
+		if isMatch {
+			mirros.Add(i)
+		}
+	}
+	return mirros
 }
