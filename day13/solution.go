@@ -33,7 +33,7 @@ func solution(fileName string) int {
 	acc := 0
 
 	for _, area := range areas {
-		fmt.Printf("Area:\n%+v\n", area.toString)
+		//fmt.Printf("Area:\n%+v\n", area.toString)
 		result := process(area)
 		acc += result
 	}
@@ -53,25 +53,40 @@ type Area struct {
 
 func process(area Area) int {
 	sum := 0
-outerLoop:
+	hRows := area.HorizontalRows
+	vRows := area.VerticalRows
+	originVM, originHM := findSum(hRows, vRows)
 	for v := 0; v < area.VLength; v++ {
 		for h := 0; h < area.HLength; h++ {
-			hRows := area.HorizontalRows
-			vRows := area.VerticalRows
+			hRowsNew := make([]string, len(hRows))
+			vRowsNew := make([]string, len(vRows))
+			copy(hRowsNew, hRows)
+			copy(vRowsNew, vRows)
 			if hRows[v][h] == '.' {
-				hRows[v] = replaceStringAtIndex(hRows[v], h, "#")
-				vRows[h] = replaceStringAtIndex(vRows[h], v, "#")
-				sum = findSum(hRows, vRows)
-				if sum > 0 {
-					break outerLoop
-				}
+				hRowsNew[v] = replaceStringAtIndex(hRowsNew[v], h, "#")
+				vRowsNew[h] = replaceStringAtIndex(vRowsNew[h], v, "#")
+			} else {
+				hRowsNew[v] = replaceStringAtIndex(hRowsNew[v], h, ".")
+				vRowsNew[h] = replaceStringAtIndex(vRowsNew[h], v, ".")
+			}
+			vM, hM := findSum(hRowsNew, vRowsNew)
+			finalVM := vM.Difference(originVM)
+			finalHM := hM.Difference(originHM)
+			if finalHM.Cardinality() > 0 || finalVM.Cardinality() > 0 {
+				vSum := lo.Sum(lo.Map(finalVM.ToSlice(), func(m int, i int) int {
+					return m + 1
+				}))
+				hSum := lo.Sum(lo.Map(finalHM.ToSlice(), func(m int, i int) int {
+					return (m + 1) * 100
+				}))
+				return vSum + hSum
 			}
 		}
 	}
 	return sum
 }
 
-func findSum(hRows []string, vRows []string) int {
+func findSum(hRows []string, vRows []string) (mapset.Set[int], mapset.Set[int]) {
 	findMirror := memoize(findMirror)
 	possibleVerticalMirrors := mapset.NewSet[int]()
 	for i := 0; i < len(hRows[0])-1; i++ {
@@ -84,9 +99,10 @@ func findSum(hRows []string, vRows []string) int {
 			break
 		}
 	}
-	if possibleVerticalMirrors.Cardinality() > 0 {
-		fmt.Printf("Vertical Mirror: %+v\n", possibleVerticalMirrors.ToSlice())
-	}
+	//if possibleVerticalMirrors.Cardinality() > 0 {
+	//	fmt.Printf("Horizontal Row: \n%+v\n", strings.Join(hRows, "\n"))
+	//	fmt.Printf("Vertical Mirror: %+v\n", possibleVerticalMirrors.ToSlice())
+	//}
 
 	possibleHorizontalMirrors := mapset.NewSet[int]()
 	for i := 0; i < len(vRows[0])-1; i++ {
@@ -99,17 +115,12 @@ func findSum(hRows []string, vRows []string) int {
 			break
 		}
 	}
-	if possibleHorizontalMirrors.Cardinality() > 0 {
-		fmt.Printf("Horizontal Mirror: %+v\n", possibleHorizontalMirrors.ToSlice())
-	}
+	//if possibleHorizontalMirrors.Cardinality() > 0 {
+	//	fmt.Printf("Vertical Row: \n%+v\n", strings.Join(vRows, "\n"))
+	//	fmt.Printf("Horizontal Mirror: %+v\n", possibleHorizontalMirrors.ToSlice())
+	//}
 
-	vSum := lo.Sum(lo.Map(possibleVerticalMirrors.ToSlice(), func(m int, i int) int {
-		return m + 1
-	}))
-	hSum := lo.Sum(lo.Map(possibleHorizontalMirrors.ToSlice(), func(m int, i int) int {
-		return (m + 1) * 100
-	}))
-	return vSum + hSum
+	return possibleVerticalMirrors, possibleHorizontalMirrors
 }
 
 func findMirror(row string) mapset.Set[int] {
