@@ -50,11 +50,9 @@ func solution(fileName string) int {
 
 func tilt(mapp *Map, direction string) []Loc {
 	rrNew := []Loc{}
-	if direction == "up" {
-		for _, rr := range mapp.RRock {
-			newLoc := getNewLoc(mapp, rr, direction)
-			rrNew = append(rrNew, newLoc)
-		}
+	for _, rr := range mapp.RRock {
+		newLoc := getNewLoc(mapp, rr, direction)
+		rrNew = append(rrNew, newLoc)
 	}
 	return rrNew
 }
