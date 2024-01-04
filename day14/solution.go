@@ -20,8 +20,8 @@ func solution(fileName string) int {
 	data := string(raw)
 	var RRock []Loc
 	var CRock []Loc
-	vLength := 0
-	for v, row := range strings.Split(data, "\n") {
+	rows := strings.Split(data, "\n")
+	for v, row := range rows {
 		for h, tile := range strings.Split(row, "") {
 			loc := Loc{h, v}
 			switch tile {
@@ -31,16 +31,21 @@ func solution(fileName string) int {
 				CRock = append(CRock, loc)
 			}
 		}
-		vLength = v
 	}
 
-	mapp := Map{RRock, CRock}
-	rrNew := tilt(&mapp, "up")
+	mapp := Map{RRock, CRock, len(rows[0]), len(rows)}
+
+	for i := 0; i < 200; i++ {
+		tilt(&mapp, "up")
+		tilt(&mapp, "left")
+		tilt(&mapp, "down")
+		tilt(&mapp, "right")
+	}
 
 	acc := 0
 
-	for _, rock := range rrNew {
-		acc += vLength - rock.V + 1
+	for _, rock := range mapp.RRock {
+		acc += mapp.VLength - rock.V
 	}
 
 	//fmt.Printf("Empty Row: %+v\n", emptyRows)
@@ -48,13 +53,14 @@ func solution(fileName string) int {
 	return acc
 }
 
-func tilt(mapp *Map, direction string) []Loc {
-	rrNew := []Loc{}
+func tilt(mapp *Map, direction string) *Map {
+	var rrNew []Loc
 	for _, rr := range mapp.RRock {
 		newLoc := getNewLoc(mapp, rr, direction)
 		rrNew = append(rrNew, newLoc)
 	}
-	return rrNew
+	mapp.RRock = rrNew
+	return mapp
 }
 
 func getNewLoc(mapp *Map, loc Loc, direction string) Loc {
@@ -69,14 +75,52 @@ func getNewLoc(mapp *Map, loc Loc, direction string) Loc {
 		rrInDirection := lo.Filter(mapp.RRock, func(rock Loc, _ int) bool {
 			return rock.H == loc.H && rock.V < loc.V && rock.V > blocker.V
 		})
-		return Loc{blocker.H, blocker.V + len(rrInDirection) + 1}
+		return Loc{loc.H, blocker.V + len(rrInDirection) + 1}
+	} else if direction == "down" {
+		crInDirection := lo.Filter(mapp.CRock, func(rock Loc, _ int) bool {
+			return rock.H == loc.H && rock.V > loc.V
+		})
+		crInDirection = append(crInDirection, Loc{loc.H, mapp.VLength})
+		blocker := lo.MinBy(crInDirection, func(a Loc, b Loc) bool {
+			return a.V < b.V
+		})
+		rrInDirection := lo.Filter(mapp.RRock, func(rock Loc, _ int) bool {
+			return rock.H == loc.H && rock.V > loc.V && rock.V < blocker.V
+		})
+		return Loc{loc.H, blocker.V - len(rrInDirection) - 1}
+	} else if direction == "right" {
+		crInDirection := lo.Filter(mapp.CRock, func(rock Loc, _ int) bool {
+			return rock.V == loc.V && rock.H > loc.H
+		})
+		crInDirection = append(crInDirection, Loc{mapp.HLength, loc.V})
+		blocker := lo.MinBy(crInDirection, func(a Loc, b Loc) bool {
+			return a.H < b.H
+		})
+		rrInDirection := lo.Filter(mapp.RRock, func(rock Loc, _ int) bool {
+			return rock.V == loc.V && loc.H < rock.H && rock.H < blocker.H
+		})
+		return Loc{blocker.H - len(rrInDirection) - 1, loc.V}
+	} else if direction == "left" {
+		crInDirection := lo.Filter(mapp.CRock, func(rock Loc, _ int) bool {
+			return rock.V == loc.V && rock.H < loc.H
+		})
+		crInDirection = append(crInDirection, Loc{-1, loc.V})
+		blocker := lo.MaxBy(crInDirection, func(a Loc, b Loc) bool {
+			return a.H > b.H
+		})
+		rrInDirection := lo.Filter(mapp.RRock, func(rock Loc, _ int) bool {
+			return rock.V == loc.V && loc.H > rock.H && rock.H > blocker.H
+		})
+		return Loc{blocker.H + len(rrInDirection) + 1, loc.V}
 	}
 	return loc
 }
 
 type Map struct {
-	RRock []Loc
-	CRock []Loc
+	RRock   []Loc
+	CRock   []Loc
+	HLength int
+	VLength int
 }
 
 type Loc struct {
