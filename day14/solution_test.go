@@ -4,14 +4,14 @@ import "testing"
 
 func TestSolution(t *testing.T) {
 	result := solution("input")
-	if result != 110128 {
+	if result != 103861 {
 		t.Fail()
 	}
 }
 
 func TestSolutionT(t *testing.T) {
 	result := solution("test_data")
-	if result != 136 {
+	if result != 64 {
 		t.Fail()
 	}
 }
@@ -32,7 +32,7 @@ func TestSolutionT2(t *testing.T) {
 
 func TestSolutionT3(t *testing.T) {
 	result := solution("test_data_3")
-	if result != 9 {
+	if result != 3 {
 		t.Fail()
 	}
 }

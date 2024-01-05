@@ -2,6 +2,7 @@ package day14
 
 import (
 	"fmt"
+	mapset "github.com/deckarep/golang-set/v2"
 	"os"
 	"path/filepath"
 	"slices"
@@ -19,17 +20,17 @@ func solution(fileName string) int {
 	// Create a scanner to read the file line by line
 	raw, _ := os.ReadFile(filePath)
 	data := string(raw)
-	var RRock []Loc
-	var CRock []Loc
+	RRock := mapset.NewSet[Loc]()
+	CRock := mapset.NewSet[Loc]()
 	rows := strings.Split(data, "\n")
 	for v, row := range rows {
 		for h, tile := range strings.Split(row, "") {
 			loc := Loc{h, v}
 			switch tile {
 			case "O":
-				RRock = append(RRock, loc)
+				RRock.Add(loc)
 			case "#":
-				CRock = append(CRock, loc)
+				CRock.Add(loc)
 			}
 		}
 	}
@@ -38,16 +39,42 @@ func solution(fileName string) int {
 	mapp.updateCRock(CRock)
 	mapp.updateRRock(RRock)
 
+	seens := []mapset.Set[Loc]{RRock}
+	loopStart := 0
+	loopEnd := 0
+outerLoop:
 	for i := 0; i < 1000; i++ {
 		tilt(&mapp, "up")
-		//tilt(&mapp, "left")
-		//tilt(&mapp, "down")
-		//tilt(&mapp, "right")
+		tilt(&mapp, "left")
+		tilt(&mapp, "down")
+		tilt(&mapp, "right")
+		//printMap(&mapp)
+		hasSeen := false
+		for j, rrock := range seens {
+			if rrock.Equal(mapp.RRock) {
+				hasSeen = true
+				fmt.Printf("Loop: %d %d\n", j, i)
+				loopStart, loopEnd = j, i
+				break outerLoop
+			}
+		}
+		if !hasSeen {
+			seens = append(seens, mapp.RRock)
+		}
 	}
-
+	fmt.Printf("Loop at cycle: %d %d\n", loopStart, loopEnd)
 	acc := 0
 
-	for _, rock := range mapp.RRock {
+	needLoop := (1000000000 - loopEnd - 1) % (loopEnd - loopStart + 1)
+
+	for i := 0; i < needLoop; i++ {
+		tilt(&mapp, "up")
+		tilt(&mapp, "left")
+		tilt(&mapp, "down")
+		tilt(&mapp, "right")
+	}
+
+	for _, rock := range mapp.RRock.ToSlice() {
 		acc += mapp.VLength - rock.V
 	}
 
@@ -56,14 +83,13 @@ func solution(fileName string) int {
 	return acc
 }
 
-func tilt(mapp *Map, direction string) *Map {
-	var rrNew []Loc
-	for _, rr := range mapp.RRock {
+func tilt(mapp *Map, direction string) {
+	rrNew := mapset.NewSet[Loc]()
+	for _, rr := range mapp.RRock.ToSlice() {
 		newLoc := getNewLoc(mapp, rr, direction)
-		rrNew = append(rrNew, newLoc)
+		rrNew.Add(newLoc)
 	}
 	mapp.updateRRock(rrNew)
-	return mapp
 }
 
 func getNewLoc(mapp *Map, loc Loc, direction string) Loc {
@@ -84,7 +110,7 @@ func getNewLoc(mapp *Map, loc Loc, direction string) Loc {
 		return Loc{newPos, loc.V}
 	} else if direction == "left" {
 		blocker := findNearestSmaller(mapp.CRockVIndex[loc.V], loc.H, -1)
-		rrInDirection := countElementsInRange(mapp.RRockVIndex[loc.V], blocker, loc.V)
+		rrInDirection := countElementsInRange(mapp.RRockVIndex[loc.V], blocker, loc.H)
 		newPos := blocker + rrInDirection + 1
 		return Loc{newPos, loc.V}
 	}
@@ -92,8 +118,8 @@ func getNewLoc(mapp *Map, loc Loc, direction string) Loc {
 }
 
 type Map struct {
-	RRock       []Loc
-	CRock       []Loc
+	RRock       mapset.Set[Loc]
+	CRock       mapset.Set[Loc]
 	HLength     int
 	VLength     int
 	CRockHIndex map[int][]int
@@ -102,12 +128,20 @@ type Map struct {
 	RRockVIndex map[int][]int
 }
 
-func (mapp *Map) updateCRock(CRock []Loc) {
+func (mapp *Map) updateCRock(CRock mapset.Set[Loc]) {
 	CRockHIndex := map[int][]int{}
 	CRockVIndex := map[int][]int{}
-	for _, rock := range CRock {
-		CRockHIndex[rock.H] = append(CRockHIndex[rock.H], rock.V)
-		CRockVIndex[rock.V] = append(CRockHIndex[rock.V], rock.H)
+	for _, rock := range CRock.ToSlice() {
+		if v, ok := CRockHIndex[rock.H]; ok {
+			CRockHIndex[rock.H] = append(v, rock.V)
+		} else {
+			CRockHIndex[rock.H] = []int{rock.V}
+		}
+		if v, ok := CRockVIndex[rock.V]; ok {
+			CRockVIndex[rock.V] = append(v, rock.H)
+		} else {
+			CRockVIndex[rock.V] = []int{rock.H}
+		}
 	}
 	for _, v := range CRockHIndex {
 		slices.Sort(v)
@@ -120,11 +154,11 @@ func (mapp *Map) updateCRock(CRock []Loc) {
 	mapp.CRock = CRock
 }
 
-func (mapp *Map) updateRRock(RRock []Loc) {
+func (mapp *Map) updateRRock(RRock mapset.Set[Loc]) {
 	RRockHIndex := map[int][]int{}
 	RRockVIndex := map[int][]int{}
 
-	for _, rock := range RRock {
+	for _, rock := range RRock.ToSlice() {
 		RRockHIndex[rock.H] = append(RRockHIndex[rock.H], rock.V)
 		RRockVIndex[rock.V] = append(RRockVIndex[rock.V], rock.H)
 	}
@@ -171,4 +205,21 @@ func findNearestBigger(numbers []int, x int, notfound int) int {
 		return notfound
 	}
 	return numbers[index]
+}
+
+func printMap(mapp *Map) {
+	for v := 0; v < mapp.VLength; v++ {
+		for h := 0; h < mapp.HLength; h++ {
+			loc := Loc{h, v}
+			if mapp.RRock.Contains(loc) {
+				fmt.Print("O")
+			} else if mapp.CRock.Contains(loc) {
+				fmt.Print("#")
+			} else {
+				fmt.Print(".")
+			}
+		}
+		fmt.Print("\n")
+	}
+	fmt.Print("\n")
 }
