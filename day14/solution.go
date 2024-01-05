@@ -2,7 +2,6 @@ package day14
 
 import (
 	"fmt"
-	"github.com/samber/lo"
 	"os"
 	"path/filepath"
 	"slices"
@@ -39,7 +38,7 @@ func solution(fileName string) int {
 	mapp.updateCRock(CRock)
 	mapp.updateRRock(RRock)
 
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 1000; i++ {
 		tilt(&mapp, "up")
 		//tilt(&mapp, "left")
 		//tilt(&mapp, "down")
@@ -69,59 +68,25 @@ func tilt(mapp *Map, direction string) *Map {
 
 func getNewLoc(mapp *Map, loc Loc, direction string) Loc {
 	if direction == "up" {
-		crInSameDirection, _ := mapp.CRockHIndex[loc.H]
-		blockerIndex := sort.Search(len(crInSameDirection), func(i int) bool {
-			rock := crInSameDirection[i]
-			return rock > loc.V
-		})
-		if blockerIndex == len(crInSameDirection) || blockerIndex == 0 {
-			blockerIndex = -1
-		} else {
-			blockerIndex = blockerIndex - 1
-		}
-		blocker := -1
-		if blockerIndex > -1 {
-			blocker = crInSameDirection[blockerIndex]
-		}
-		rrInSameDirection, _ := mapp.RRockHIndex[loc.H]
-		rrInDirection := countElementsInRange(rrInSameDirection, blocker, loc.V)
-		return Loc{loc.H, blocker + rrInDirection + 1}
+		blocker := findNearestSmaller(mapp.CRockHIndex[loc.H], loc.V, -1)
+		rrInDirection := countElementsInRange(mapp.RRockHIndex[loc.H], blocker, loc.V)
+		newPos := blocker + rrInDirection + 1
+		return Loc{loc.H, newPos}
 	} else if direction == "down" {
-		crInDirection := lo.Filter(mapp.CRock, func(rock Loc, _ int) bool {
-			return rock.H == loc.H && rock.V > loc.V
-		})
-		crInDirection = append(crInDirection, Loc{loc.H, mapp.VLength})
-		blocker := lo.MinBy(crInDirection, func(a Loc, b Loc) bool {
-			return a.V < b.V
-		})
-		rrInDirection := lo.Filter(mapp.RRock, func(rock Loc, _ int) bool {
-			return rock.H == loc.H && rock.V > loc.V && rock.V < blocker.V
-		})
-		return Loc{loc.H, blocker.V - len(rrInDirection) - 1}
+		blocker := findNearestBigger(mapp.CRockHIndex[loc.H], loc.V, mapp.VLength)
+		rrInDirection := countElementsInRange(mapp.RRockHIndex[loc.H], loc.V, blocker)
+		newPos := blocker - rrInDirection - 1
+		return Loc{loc.H, newPos}
 	} else if direction == "right" {
-		crInDirection := lo.Filter(mapp.CRock, func(rock Loc, _ int) bool {
-			return rock.V == loc.V && rock.H > loc.H
-		})
-		crInDirection = append(crInDirection, Loc{mapp.HLength, loc.V})
-		blocker := lo.MinBy(crInDirection, func(a Loc, b Loc) bool {
-			return a.H < b.H
-		})
-		rrInDirection := lo.Filter(mapp.RRock, func(rock Loc, _ int) bool {
-			return rock.V == loc.V && loc.H < rock.H && rock.H < blocker.H
-		})
-		return Loc{blocker.H - len(rrInDirection) - 1, loc.V}
+		blocker := findNearestBigger(mapp.CRockVIndex[loc.V], loc.H, mapp.HLength)
+		rrInDirection := countElementsInRange(mapp.RRockVIndex[loc.V], loc.H, blocker)
+		newPos := blocker - rrInDirection - 1
+		return Loc{newPos, loc.V}
 	} else if direction == "left" {
-		crInDirection := lo.Filter(mapp.CRock, func(rock Loc, _ int) bool {
-			return rock.V == loc.V && rock.H < loc.H
-		})
-		crInDirection = append(crInDirection, Loc{-1, loc.V})
-		blocker := lo.MaxBy(crInDirection, func(a Loc, b Loc) bool {
-			return a.H > b.H
-		})
-		rrInDirection := lo.Filter(mapp.RRock, func(rock Loc, _ int) bool {
-			return rock.V == loc.V && loc.H > rock.H && rock.H > blocker.H
-		})
-		return Loc{blocker.H + len(rrInDirection) + 1, loc.V}
+		blocker := findNearestSmaller(mapp.CRockVIndex[loc.V], loc.H, -1)
+		rrInDirection := countElementsInRange(mapp.RRockVIndex[loc.V], blocker, loc.V)
+		newPos := blocker + rrInDirection + 1
+		return Loc{newPos, loc.V}
 	}
 	return loc
 }
@@ -141,12 +106,6 @@ func (mapp *Map) updateCRock(CRock []Loc) {
 	CRockHIndex := map[int][]int{}
 	CRockVIndex := map[int][]int{}
 	for _, rock := range CRock {
-		//if _, ok := CRockHIndex[rock.H]; !ok {
-		//	CRockHIndex[rock.H] = []int{}
-		//}
-		//if _, ok := CRockHIndex[rock.V]; !ok {
-		//	CRockHIndex[rock.V] = []int{}
-		//}
 		CRockHIndex[rock.H] = append(CRockHIndex[rock.H], rock.V)
 		CRockVIndex[rock.V] = append(CRockHIndex[rock.V], rock.H)
 	}
@@ -166,12 +125,6 @@ func (mapp *Map) updateRRock(RRock []Loc) {
 	RRockVIndex := map[int][]int{}
 
 	for _, rock := range RRock {
-		//if _, ok := RRockHIndex[rock.H]; !ok {
-		//	RRockHIndex[rock.H] = []int{}
-		//}
-		//if _, ok := RRockVIndex[rock.V]; !ok {
-		//	RRockVIndex[rock.V] = []int{}
-		//}
 		RRockHIndex[rock.H] = append(RRockHIndex[rock.H], rock.V)
 		RRockVIndex[rock.V] = append(RRockVIndex[rock.V], rock.H)
 	}
@@ -198,4 +151,24 @@ func countElementsInRange(numbers []int, X int, Y int) int {
 
 	count = rightIndex - leftIndex
 	return count
+}
+
+func findNearestSmaller(numbers []int, x int, notfound int) int {
+	index := sort.Search(len(numbers), func(i int) bool {
+		return numbers[i] > x
+	})
+	if index == 0 {
+		return notfound
+	}
+	return numbers[index-1]
+}
+
+func findNearestBigger(numbers []int, x int, notfound int) int {
+	index := sort.Search(len(numbers), func(i int) bool {
+		return numbers[i] > x
+	})
+	if index == len(numbers) {
+		return notfound
+	}
+	return numbers[index]
 }

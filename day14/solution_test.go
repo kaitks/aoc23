@@ -18,14 +18,21 @@ func TestSolutionT(t *testing.T) {
 
 func TestSolutionT1(t *testing.T) {
 	result := solution("test_data_1")
-	if result != 2 {
+	if result != 1 {
 		t.Fail()
 	}
 }
 
 func TestSolutionT2(t *testing.T) {
 	result := solution("test_data_2")
-	if result != 2 {
+	if result != 1 {
+		t.Fail()
+	}
+}
+
+func TestSolutionT3(t *testing.T) {
+	result := solution("test_data_3")
+	if result != 9 {
 		t.Fail()
 	}
 }
