@@ -64,8 +64,8 @@ func solution(fileName string) int {
 	}
 	acc := 0
 
-	for _, rock := range mapp.RRock.ToSlice() {
-		acc += mapp.VLength - rock.V
+	for V, rocks := range mapp.RRockVIndex {
+		acc += (mapp.VLength - V) * (len(rocks))
 	}
 
 	fmt.Printf("Total: %+v\n", acc)
@@ -74,10 +74,11 @@ func solution(fileName string) int {
 
 func tilt(mapp *Map, direction string) {
 	rrNew := mapset.NewSet[Loc]()
-	for _, rr := range mapp.RRock.ToSlice() {
-		newLoc := getNewLoc(mapp, rr, direction)
+	mapp.RRock.Each(func(rock Loc) bool {
+		newLoc := getNewLoc(mapp, rock, direction)
 		rrNew.Add(newLoc)
-	}
+		return false
+	})
 	mapp.updateRRock(rrNew)
 }
 
@@ -120,7 +121,7 @@ type Map struct {
 func (mapp *Map) updateCRock(CRock mapset.Set[Loc]) {
 	CRockHIndex := map[int][]int{}
 	CRockVIndex := map[int][]int{}
-	for _, rock := range CRock.ToSlice() {
+	CRock.Each(func(rock Loc) bool {
 		if v, ok := CRockHIndex[rock.H]; ok {
 			CRockHIndex[rock.H] = append(v, rock.V)
 		} else {
@@ -131,7 +132,8 @@ func (mapp *Map) updateCRock(CRock mapset.Set[Loc]) {
 		} else {
 			CRockVIndex[rock.V] = []int{rock.H}
 		}
-	}
+		return false
+	})
 	for _, v := range CRockHIndex {
 		slices.Sort(v)
 	}
