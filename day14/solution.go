@@ -68,7 +68,6 @@ func solution(fileName string) int {
 		acc += mapp.VLength - rock.V
 	}
 
-	//fmt.Printf("Empty Row: %+v\n", emptyRows)
 	fmt.Printf("Total: %+v\n", acc)
 	return acc
 }
