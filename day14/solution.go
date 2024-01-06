@@ -40,39 +40,29 @@ func solution(fileName string) int {
 	mapp.updateRRock(RRock)
 
 	seens := []mapset.Set[Loc]{RRock}
-	loopStart := 0
-	loopEnd := 0
-outerLoop:
-	for i := 0; i < 1000; i++ {
+	hasSeen := false
+	loop := 1000000000
+	for i := 0; i < loop; i++ {
 		tilt(&mapp, "up")
 		tilt(&mapp, "left")
 		tilt(&mapp, "down")
 		tilt(&mapp, "right")
-		//printMap(&mapp)
-		hasSeen := false
-		for j, rrock := range seens {
-			if rrock.Equal(mapp.RRock) {
+		if !hasSeen {
+			j := slices.IndexFunc(seens, func(seen mapset.Set[Loc]) bool {
+				return seen.Equal(mapp.RRock)
+			})
+			if j != -1 {
 				hasSeen = true
 				fmt.Printf("Loop: %d %d\n", j, i)
-				loopStart, loopEnd = j, i
-				break outerLoop
+				needLoop := (1000000000 - i - 1) % (i - j + 1)
+				loop = i + needLoop + 1
+			} else {
+				seens = append(seens, mapp.RRock)
 			}
 		}
-		if !hasSeen {
-			seens = append(seens, mapp.RRock)
-		}
+		printMap(&mapp)
 	}
-	fmt.Printf("Loop at cycle: %d %d\n", loopStart, loopEnd)
 	acc := 0
-
-	needLoop := (1000000000 - loopEnd - 1) % (loopEnd - loopStart + 1)
-
-	for i := 0; i < needLoop; i++ {
-		tilt(&mapp, "up")
-		tilt(&mapp, "left")
-		tilt(&mapp, "down")
-		tilt(&mapp, "right")
-	}
 
 	for _, rock := range mapp.RRock.ToSlice() {
 		acc += mapp.VLength - rock.V
