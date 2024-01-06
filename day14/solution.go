@@ -60,7 +60,7 @@ func solution(fileName string) int {
 				seens = append(seens, mapp.RRock)
 			}
 		}
-		printMap(&mapp)
+		//printMap(&mapp)
 	}
 	acc := 0
 
@@ -108,14 +108,14 @@ func getNewLoc(mapp *Map, loc Loc, direction string) Loc {
 }
 
 type Map struct {
-	RRock       mapset.Set[Loc]
-	CRock       mapset.Set[Loc]
 	HLength     int
 	VLength     int
-	CRockHIndex map[int][]int
-	CRockVIndex map[int][]int
+	RRock       mapset.Set[Loc]
 	RRockHIndex map[int][]int
 	RRockVIndex map[int][]int
+	CRock       mapset.Set[Loc]
+	CRockHIndex map[int][]int
+	CRockVIndex map[int][]int
 }
 
 func (mapp *Map) updateCRock(CRock mapset.Set[Loc]) {
