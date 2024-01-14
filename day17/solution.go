@@ -74,17 +74,23 @@ func (point *Point) findWay(mapp *Map, path mapset.Set[Loc], pathOrdered []Loc, 
 		}
 		return
 	}
-	nextPoints := []Point{point.moveInDirection("right"), point.moveInDirection("left"), point.moveInDirection("straight")}
+	nextPoints := []Point{point.moveInDirection("straight"), point.moveInDirection("right"), point.moveInDirection("left")}
 	for _, nPoint := range nextPoints {
-		if path.Contains(nPoint.next) {
-			continue
-		}
 		if nPoint.next.h < hBound && nPoint.next.v < vBound {
 			continue
 		}
+		if path.Contains(nPoint.next) {
+			continue
+		}
 		pathLen := len(pathOrdered)
-		if pathLen > 3 {
+		if pathLen == 3 {
 			previousLocs := pathOrdered[pathLen-3 : pathLen]
+			validateLocs := append(previousLocs, nPoint.next)
+			if allHValuesSame(validateLocs) || allVValuesSame(validateLocs) {
+				continue
+			}
+		} else if pathLen >= 4 {
+			previousLocs := pathOrdered[pathLen-4 : pathLen]
 			validateLocs := append(previousLocs, nPoint.next)
 			if allHValuesSame(validateLocs) || allVValuesSame(validateLocs) {
 				continue
@@ -140,21 +146,6 @@ func (point *Point) rotate() Point {
 	rotatedNext := Loc{h: point.current.h - vDist, v: point.current.v + hDist}
 
 	return Point{current: point.current, next: rotatedNext}
-}
-
-func (loc *Loc) move(direction string) Loc {
-	switch direction {
-	case "right":
-		return Loc{loc.h + 1, loc.v}
-	case "left":
-		return Loc{loc.h - 1, loc.v}
-	case "up":
-		return Loc{loc.h, loc.v - 1}
-	case "down":
-		return Loc{loc.h, loc.v + 1}
-	default:
-		return *loc
-	}
 }
 
 func allHValuesSame(locs []Loc) bool {
