@@ -34,7 +34,7 @@ func solution(fileName string) int {
 	bestCost := 99999999
 	starter := Point{Loc{-1, 0}, Loc{0, 0}}
 	path := mapset.NewSet[Loc]()
-	starter.findWay(&mapp, path, 0, &bestCost)
+	starter.findWay(&mapp, path, []Loc{}, 0, &bestCost)
 
 	fmt.Printf("Total: %+v\n", bestCost)
 	return bestCost
@@ -50,11 +50,12 @@ type Loc struct {
 	v int
 }
 
-func (point *Point) findWay(mapp *Map, path mapset.Set[Loc], accCost int, bestCost *int) {
+func (point *Point) findWay(mapp *Map, path mapset.Set[Loc], pathOrdered []Loc, accCost int, bestCost *int) {
 	if point.next.h < 0 || point.next.h >= mapp.hLength || point.next.v < 0 || point.next.v >= mapp.vLength {
 		return
 	}
 	path.Add(point.next)
+	pathOrdered = append(pathOrdered, point.next)
 	accCost += mapp.data[point.next.v][point.next.h]
 	if accCost > *bestCost {
 		return
@@ -62,7 +63,8 @@ func (point *Point) findWay(mapp *Map, path mapset.Set[Loc], accCost int, bestCo
 	if point.next == mapp.endLoc {
 		if accCost < *bestCost {
 			*bestCost = accCost
-			fmt.Printf("Step: %+v\n", path.ToSlice())
+			fmt.Printf("Cost: %+v\n", *bestCost)
+			printMap(mapp, path)
 		}
 		return
 	}
@@ -71,7 +73,16 @@ func (point *Point) findWay(mapp *Map, path mapset.Set[Loc], accCost int, bestCo
 		if path.Contains(nPoint.next) {
 			return
 		}
-		nPoint.findWay(mapp, path, accCost, bestCost)
+		pathLen := len(pathOrdered)
+		if pathLen > 3 {
+			previousLocs := pathOrdered[pathLen-3 : pathLen]
+			validateLocs := append(previousLocs, nPoint.next)
+			if allHValuesSame(validateLocs) || allVValuesSame(validateLocs) {
+				return
+			}
+		}
+		newPath := path.Clone()
+		nPoint.findWay(mapp, newPath, pathOrdered, accCost, bestCost)
 	}
 	return
 }
@@ -135,4 +146,46 @@ func (loc *Loc) move(direction string) Loc {
 	default:
 		return *loc
 	}
+}
+
+func allHValuesSame(locs []Loc) bool {
+	// Get the first h value as a baseline
+	firstH := locs[0].h
+
+	// Iterate through the rest of the slice, comparing h values
+	for _, loc := range locs[1:] {
+		if loc.h != firstH {
+			return false // If any h value differs, return false
+		}
+	}
+
+	return true // If all h values match, return true
+}
+
+func allVValuesSame(locs []Loc) bool {
+	firstV := locs[0].v // Get the first v value as a reference
+
+	for _, loc := range locs[1:] { // Iterate through the rest of the slice
+		if loc.v != firstV {
+			return false // If any v value differs, return false
+		}
+	}
+
+	return true // If all v values match, return true
+}
+
+func printMap(mapp *Map, path mapset.Set[Loc]) {
+	for v := 0; v < mapp.vLength; v++ {
+		for h := 0; h < mapp.hLength; h++ {
+			loc := Loc{h, v}
+			value := mapp.data[loc.v][loc.h]
+			if path.Contains(loc) {
+				fmt.Printf("%d", value)
+			} else {
+				fmt.Print(".")
+			}
+		}
+		fmt.Print("\n")
+	}
+	fmt.Print("\n")
 }
