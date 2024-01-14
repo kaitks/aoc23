@@ -34,7 +34,7 @@ func solution(fileName string) int {
 	bestCost := 99999999
 	starter := Point{Loc{-1, 0}, Loc{0, 0}}
 	path := mapset.NewSet[Loc]()
-	starter.findWay(&mapp, path, []Loc{}, 0, &bestCost)
+	starter.findWay(&mapp, path, []Loc{}, 0, 0, 0, &bestCost)
 
 	fmt.Printf("Total: %+v\n", bestCost)
 	return bestCost
@@ -50,13 +50,19 @@ type Loc struct {
 	v int
 }
 
-func (point *Point) findWay(mapp *Map, path mapset.Set[Loc], pathOrdered []Loc, accCost int, bestCost *int) {
+func (point *Point) findWay(mapp *Map, path mapset.Set[Loc], pathOrdered []Loc, hBound int, vBound int, accCost int, bestCost *int) {
 	if point.next.h < 0 || point.next.h >= mapp.hLength || point.next.v < 0 || point.next.v >= mapp.vLength {
 		return
 	}
 	path.Add(point.next)
 	pathOrdered = append(pathOrdered, point.next)
 	accCost += mapp.data[point.next.v][point.next.h]
+	if point.next.h > hBound {
+		hBound = point.next.h
+	}
+	if point.next.v > vBound {
+		vBound = point.next.v
+	}
 	if accCost > *bestCost {
 		return
 	}
@@ -71,18 +77,21 @@ func (point *Point) findWay(mapp *Map, path mapset.Set[Loc], pathOrdered []Loc, 
 	nextPoints := []Point{point.moveInDirection("right"), point.moveInDirection("left"), point.moveInDirection("straight")}
 	for _, nPoint := range nextPoints {
 		if path.Contains(nPoint.next) {
-			return
+			continue
+		}
+		if nPoint.next.h < hBound && nPoint.next.v < vBound {
+			continue
 		}
 		pathLen := len(pathOrdered)
 		if pathLen > 3 {
 			previousLocs := pathOrdered[pathLen-3 : pathLen]
 			validateLocs := append(previousLocs, nPoint.next)
 			if allHValuesSame(validateLocs) || allVValuesSame(validateLocs) {
-				return
+				continue
 			}
 		}
 		newPath := path.Clone()
-		nPoint.findWay(mapp, newPath, pathOrdered, accCost, bestCost)
+		nPoint.findWay(mapp, newPath, pathOrdered, hBound, vBound, accCost, bestCost)
 	}
 	return
 }
