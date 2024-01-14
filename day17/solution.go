@@ -51,6 +51,9 @@ type Loc struct {
 }
 
 func (point *Point) findWay(mapp *Map, path mapset.Set[Loc], accCost int, bestCost *int) {
+	if point.next.h < 0 || point.next.h >= mapp.hLength || point.next.v < 0 || point.next.v >= mapp.vLength {
+		return
+	}
 	path.Add(point.next)
 	accCost += mapp.data[point.next.v][point.next.h]
 	if accCost > *bestCost {
@@ -59,14 +62,15 @@ func (point *Point) findWay(mapp *Map, path mapset.Set[Loc], accCost int, bestCo
 	if point.next == mapp.endLoc {
 		if accCost < *bestCost {
 			*bestCost = accCost
+			fmt.Printf("Step: %+v\n", path.ToSlice())
 		}
-		return
-	}
-	if point.next.h < 0 || point.next.h >= mapp.hLength || point.next.v < 0 || point.next.v >= mapp.vLength || path.Contains(point.next) {
 		return
 	}
 	nextPoints := []Point{point.moveInDirection("right"), point.moveInDirection("left"), point.moveInDirection("straight")}
 	for _, nPoint := range nextPoints {
+		if path.Contains(nPoint.next) {
+			return
+		}
 		nPoint.findWay(mapp, path, accCost, bestCost)
 	}
 	return
@@ -84,8 +88,38 @@ type Map struct {
 }
 
 func (point *Point) moveInDirection(direction string) Point {
-	next := point.next
-	return Point{next, next.move(direction)}
+	hDelta := point.next.h - point.current.h
+	vDelta := point.next.v - point.current.v
+	nextPoint := Point{point.next, Loc{point.next.h + hDelta, point.next.v + vDelta}}
+	switch direction {
+	case "straight":
+		return nextPoint.rotateCount(0)
+	case "right":
+		return nextPoint.rotateCount(1)
+	case "left":
+		return nextPoint.rotateCount(3)
+	default:
+		return nextPoint
+	}
+}
+
+func (point *Point) rotateCount(count int) Point {
+	for i := 0; i < count; i++ {
+		*point = point.rotate()
+	}
+	return *point
+}
+
+func (point *Point) rotate() Point {
+	// Calculate the horizontal and vertical distances
+	hDist := point.next.h - point.current.h
+	vDist := point.next.v - point.current.v
+	// Rotate the coordinates:
+	// - Swap the horizontal distance and vertical distance
+	// - Negate the new horizontal distance (for clockwise rotation)
+	rotatedNext := Loc{h: point.current.h - vDist, v: point.current.v + hDist}
+
+	return Point{current: point.current, next: rotatedNext}
 }
 
 func (loc *Loc) move(direction string) Loc {
