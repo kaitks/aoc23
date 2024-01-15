@@ -67,12 +67,9 @@ func dj(mapp *Map) int {
 			unseen.Remove(loc)
 		}
 		adjacentLocs := []Loc{loc.move("right"), loc.move("left"), loc.move("up"), loc.move("down")}
-		adjacentLocs = lo.Filter(adjacentLocs, func(adj Loc, _ int) bool {
-			return adj.h >= 0 && adj.h < mapp.hLength && adj.v >= 0 && adj.v < mapp.vLength
-		})
 		for _, adj := range adjacentLocs {
 			currentPath, _ := score[loc]
-			if lo.Contains(currentPath.path, adj) {
+			if lo.Contains(currentPath.path, adj) || !(adj.h >= 0 && adj.h < mapp.hLength && adj.v >= 0 && adj.v < mapp.vLength) {
 				continue
 			}
 			adjPath, _ := score[adj]
@@ -85,6 +82,7 @@ func dj(mapp *Map) int {
 			}
 		}
 	}
+	//heap.Init()
 	bestPath := score[mapp.endLoc]
 	fmt.Printf("Distance: %+v\n", bestPath.distance)
 	printMap(mapp, mapset.NewSet[Loc](bestPath.path...))
