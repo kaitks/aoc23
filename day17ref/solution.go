@@ -42,7 +42,6 @@ type Vertex struct {
 	position  Point
 	direction int
 
-	visited  bool
 	heatloss int
 
 	calculatedHeatloss int
@@ -55,38 +54,32 @@ type Vertex struct {
 // A PriorityQueue implements heap.Interface and holds Items.
 type PriorityQueue []*Vertex
 
-func (pq PriorityQueue) Len() int { return len(pq) }
-
-func (pq PriorityQueue) Less(i, j int) bool {
-	return pq[i].total < pq[j].total
+func (pq *PriorityQueue) Len() int {
+	return len(*pq)
 }
 
-func (pq PriorityQueue) Swap(i, j int) {
-	pq[i], pq[j] = pq[j], pq[i]
-	pq[i].index = i
-	pq[j].index = j
+func (pq *PriorityQueue) Less(i, j int) bool {
+	return (*pq)[i].total < (*pq)[j].total
+}
+
+func (pq *PriorityQueue) Swap(i, j int) {
+	(*pq)[i], (*pq)[j] = (*pq)[j], (*pq)[i]
+	(*pq)[i].index = i
+	(*pq)[j].index = j
 }
 
 func (pq *PriorityQueue) Push(x any) {
-	n := len(*pq)
+	index := (*pq).Len()
 	item := x.(*Vertex)
-	item.index = n
+	item.index = index
 	*pq = append(*pq, item)
 }
 
 func (pq *PriorityQueue) Pop() any {
-	old := *pq
-	n := len(old)
-	item := old[n-1]
-	old[n-1] = nil  // avoid memory leak
-	item.index = -1 // for safety
-	*pq = old[0 : n-1]
+	n := (*pq).Len()
+	item := (*pq)[n-1]
+	*pq = (*pq)[0 : n-1]
 	return item
-}
-
-// update modifies the priority and value of an Item in the queue.
-func (pq *PriorityQueue) update(item *Vertex, priority int) {
-	heap.Fix(pq, item.index)
 }
 
 func (g *Graph) getEdges(u *Vertex, minSteps int, maxSteps int) []*Vertex {
@@ -202,14 +195,11 @@ func Dijkstra(grid [][]int, minSteps int, maxSteps int) int {
 			break
 		}
 
-		// mark vertice as visited
-		u.visited = true
-
 		// consider visitable neighbors
 		for _, e := range graph.getEdges(u, minSteps, maxSteps) {
 			if u.total+e.calculatedHeatloss < e.total {
 				e.total = u.total + e.calculatedHeatloss
-				pq.update(e, e.total)
+				heap.Fix(&pq, e.index)
 			}
 		}
 	}

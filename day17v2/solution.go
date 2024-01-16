@@ -1,10 +1,9 @@
 package day17v2
 
 import (
+	"container/heap"
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/samber/lo"
-	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -21,245 +20,174 @@ func solution(fileName string) int {
 	// Create a scanner to read the file line by line
 	raw, _ := os.ReadFile(filePath)
 	data := string(raw)
-	var mappData [][]int
+	var grid [][]int
 	for _, rowStr := range strings.Split(data, "\n") {
 		row := lo.Map(strings.Split(rowStr, ""), func(str string, _ int) int {
 			value, _ := strconv.Atoi(str)
 			return value
 		})
-		mappData = append(mappData, row)
+		grid = append(grid, row)
 	}
-	hLength := len(mappData[0])
-	vLength := len(mappData)
-	mapp := Map{mappData, hLength, vLength, Loc{hLength - 1, vLength - 1}}
-	shortest := dj(&mapp)
+	hLength := len(grid[0])
+	vLength := len(grid)
+	mapp := Map{grid, hLength, vLength, Pos{hLength - 1, vLength - 1}}
+	shortest := Dj(&mapp)
 
 	fmt.Printf("Total: %+v\n", shortest)
 	return shortest
 }
 
-type Point struct {
-	current Loc
-	next    Loc
+type Pos struct {
+	x int
+	y int
 }
 
-type Loc struct {
-	h int
-	v int
-}
+func Dj(mapp *Map) int {
+	graph := NewGraph(mapp)
+	vertices := graph.vertices
+	vertices[0].direction = PLANE_UNDECIDED
+	vertices[0].total = 0
 
-func dj(mapp *Map) int {
-	unseen := mapset.NewSet[Loc]()
-	score := map[Loc]Path{}
-	for v := 0; v < mapp.vLength; v++ {
-		for h := 0; h < mapp.hLength; h++ {
-			loc := Loc{h, v}
-			unseen.Add(loc)
-			score[loc] = Path{[]Loc{}, math.MaxInt}
-		}
+	pq := make(PriorityQueue, len(vertices))
+	for i := 0; i < len(vertices); i++ {
+		vertices[i].index = i
+		pq[i] = &vertices[i]
 	}
-	score[Loc{0, 0}] = Path{[]Loc{}, 0}
+	heap.Init(&pq)
+
+	var u *Vertex
+
 	for {
-		loc, found := findLowest(score, unseen)
-		if !found {
+		u = heap.Pop(&pq).(*Vertex)
+		if (*u).pos == mapp.endPos {
 			break
-		} else {
-			unseen.Remove(loc)
 		}
-		adjacentLocs := []Loc{loc.move("right"), loc.move("left"), loc.move("up"), loc.move("down")}
-		for _, adj := range adjacentLocs {
-			currentPath, _ := score[loc]
-			if lo.Contains(currentPath.path, adj) || !(adj.h >= 0 && adj.h < mapp.hLength && adj.v >= 0 && adj.v < mapp.vLength) {
-				continue
-			}
-			adjPath, _ := score[adj]
-			distance := mapp.data[adj.v][adj.h]
-			newDistance := currentPath.distance + distance
-			if newDistance < adjPath.distance {
-				adjPath.distance = newDistance
-				adjPath.path = append(currentPath.path, adj)
-				score[adj] = adjPath
+		edges := graph.getEdges(u)
+		for _, e := range edges {
+			total := u.total + e.calculatedCost
+			if e.total > total {
+				e.total = total
+				heap.Fix(&pq, e.index)
 			}
 		}
 	}
-	//heap.Init()
-	bestPath := score[mapp.endLoc]
-	fmt.Printf("Distance: %+v\n", bestPath.distance)
-	printMap(mapp, mapset.NewSet[Loc](bestPath.path...))
-	return bestPath.distance
+	return u.total
 }
 
-func findLowest(score map[Loc]Path, unseen mapset.Set[Loc]) (Loc, bool) {
-	minn := math.MaxInt
-	found := false
-	var loc Loc
-	for k, path := range score {
-		if path.distance < minn && unseen.Contains(k) {
-			minn = path.distance
-			loc = k
-			found = true
-		}
-	}
-	return loc, found
+type PriorityQueue []*Vertex
+
+func (pq *PriorityQueue) Len() int {
+	return len(*pq)
 }
 
-//
-//func (point *Point) findWay(mapp *Map, path mapset.Set[Loc], pathOrdered []Loc, hBound int, vBound int, accCost int, bestCost *int) {
-//	if point.next.h < 0 || point.next.h >= mapp.hLength || point.next.v < 0 || point.next.v >= mapp.vLength {
-//		return
-//	}
-//	path.Add(point.next)
-//	pathOrdered = append(pathOrdered, point.next)
-//	accCost += mapp.data[point.next.v][point.next.h]
-//	if point.next.h > hBound {
-//		hBound = point.next.h
-//	}
-//	if point.next.v > vBound {
-//		vBound = point.next.v
-//	}
-//	if accCost > *bestCost {
-//		return
-//	}
-//	if point.next == mapp.endLoc {
-//		if accCost < *bestCost {
-//			*bestCost = accCost
-//			fmt.Printf("Cost: %+v\n", *bestCost)
-//			printMap(mapp, path)
-//		}
-//		return
-//	}
-//	nextPoints := []Point{point.moveInDirection("straight"), point.moveInDirection("right"), point.moveInDirection("left")}
-//	for _, nPoint := range nextPoints {
-//		if nPoint.next.h < hBound && nPoint.next.v < vBound {
-//			continue
-//		}
-//		if path.Contains(nPoint.next) {
-//			continue
-//		}
-//		pathLen := len(pathOrdered)
-//		if pathLen == 3 {
-//			previousLocs := pathOrdered[pathLen-3 : pathLen]
-//			validateLocs := append(previousLocs, nPoint.next)
-//			if allHValuesSame(validateLocs) || allVValuesSame(validateLocs) {
-//				continue
-//			}
-//		} else if pathLen >= 4 {
-//			previousLocs := pathOrdered[pathLen-4 : pathLen]
-//			validateLocs := append(previousLocs, nPoint.next)
-//			if allHValuesSame(validateLocs) || allVValuesSame(validateLocs) {
-//				continue
-//			}
-//		}
-//		newPath := path.Clone()
-//		nPoint.findWay(mapp, newPath, pathOrdered, hBound, vBound, accCost, bestCost)
-//	}
-//	return
-//}
+func (pq *PriorityQueue) Less(i, j int) bool {
+	return (*pq)[i].total < (*pq)[j].total
+}
 
-func (loc *Loc) right() Loc {
-	return Loc{loc.h + 1, loc.v}
+func (pq *PriorityQueue) Swap(i, j int) {
+	(*pq)[i], (*pq)[j] = (*pq)[j], (*pq)[i]
+	(*pq)[i].index = i
+	(*pq)[j].index = j
+}
+
+func (pq *PriorityQueue) Push(x any) {
+	index := (*pq).Len()
+	item := x.(*Vertex)
+	item.index = index
+	*pq = append(*pq, item)
+}
+
+func (pq *PriorityQueue) Pop() any {
+	n := (*pq).Len()
+	item := (*pq)[n-1]
+	*pq = (*pq)[0 : n-1]
+	item.index = -1
+	return item
 }
 
 type Map struct {
-	data    [][]int
+	grid    [][]int
 	hLength int
 	vLength int
-	endLoc  Loc
+	endPos  Pos
 }
 
-type Path struct {
-	path     []Loc
-	distance int
+type Graph struct {
+	vertices []Vertex
+	width    int
+	height   int
 }
 
-func (point *Point) moveInDirection(direction string) Point {
-	hDelta := point.next.h - point.current.h
-	vDelta := point.next.v - point.current.v
-	nextPoint := Point{point.next, Loc{point.next.h + hDelta, point.next.v + vDelta}}
-	switch direction {
-	case "straight":
-		return nextPoint.rotateCount(0)
-	case "right":
-		return nextPoint.rotateCount(1)
-	case "left":
-		return nextPoint.rotateCount(3)
-	default:
-		return nextPoint
-	}
-}
-
-func (point *Point) rotateCount(count int) Point {
-	for i := 0; i < count; i++ {
-		*point = point.rotate()
-	}
-	return *point
-}
-
-func (point *Point) rotate() Point {
-	// Calculate the horizontal and vertical distances
-	hDist := point.next.h - point.current.h
-	vDist := point.next.v - point.current.v
-	// Rotate the coordinates:
-	// - Swap the horizontal distance and vertical distance
-	// - Negate the new horizontal distance (for clockwise rotation)
-	rotatedNext := Loc{h: point.current.h - vDist, v: point.current.v + hDist}
-
-	return Point{current: point.current, next: rotatedNext}
-}
-
-func allHValuesSame(locs []Loc) bool {
-	// Get the first h value as a baseline
-	firstH := locs[0].h
-
-	// Iterate through the rest of the slice, comparing h values
-	for _, loc := range locs[1:] {
-		if loc.h != firstH {
-			return false // If any h value differs, return false
-		}
-	}
-
-	return true // If all h values match, return true
-}
-
-func allVValuesSame(locs []Loc) bool {
-	firstV := locs[0].v // Get the first v value as a reference
-
-	for _, loc := range locs[1:] { // Iterate through the rest of the slice
-		if loc.v != firstV {
-			return false // If any v value differs, return false
-		}
-	}
-
-	return true // If all v values match, return true
-}
-
-func printMap(mapp *Map, path mapset.Set[Loc]) {
-	for v := 0; v < mapp.vLength; v++ {
-		for h := 0; h < mapp.hLength; h++ {
-			loc := Loc{h, v}
-			value := mapp.data[loc.v][loc.h]
-			if path.Contains(loc) {
-				fmt.Printf("%d", value)
-			} else {
-				fmt.Print(".")
+func (graph *Graph) getEdges(u *Vertex) []*Vertex {
+	var e []*Vertex
+	if u.direction == PLANE_VERTICAL || u.direction == PLANE_UNDECIDED {
+		for calculatedCost, i := 0, 1; i <= 3; i++ {
+			v := graph.getVertexByPos(u.pos.x, u.pos.y+i, PLANE_HORIZONTAL)
+			if v != nil {
+				calculatedCost += v.cost
+				v.calculatedCost = calculatedCost
+				e = append(e, v)
 			}
 		}
-		fmt.Print("\n")
+		for calculatedCost, i := 0, 1; i <= 3; i++ {
+			v := graph.getVertexByPos(u.pos.x, u.pos.y-i, PLANE_HORIZONTAL)
+			if v != nil {
+				calculatedCost += v.cost
+				v.calculatedCost = calculatedCost
+				e = append(e, v)
+			}
+		}
 	}
-	fmt.Print("\n")
+	if u.direction == PLANE_HORIZONTAL || u.direction == PLANE_UNDECIDED {
+		for calculatedCost, i := 0, 1; i <= 3; i++ {
+			v := graph.getVertexByPos(u.pos.x+i, u.pos.y, PLANE_VERTICAL)
+			if v != nil {
+				calculatedCost += v.cost
+				v.calculatedCost = calculatedCost
+				e = append(e, v)
+			}
+		}
+		for calculatedCost, i := 0, 1; i <= 3; i++ {
+			v := graph.getVertexByPos(u.pos.x-i, u.pos.y, PLANE_VERTICAL)
+			if v != nil {
+				calculatedCost += v.cost
+				v.calculatedCost = calculatedCost
+				e = append(e, v)
+			}
+		}
+	}
+	return e
 }
 
-func (loc *Loc) move(direction string) Loc {
-	switch direction {
-	case "right":
-		return Loc{loc.h + 1, loc.v}
-	case "left":
-		return Loc{loc.h - 1, loc.v}
-	case "up":
-		return Loc{loc.h, loc.v - 1}
-	case "down":
-		return Loc{loc.h, loc.v + 1}
-	default:
-		return *loc
+func (graph *Graph) getVertexByPos(x int, y int, direction int) *Vertex {
+	if x < 0 || y < 0 || y >= graph.height || x >= graph.width {
+		return nil
 	}
+	return &graph.vertices[y*graph.width*2+x*2+direction]
 }
+
+type Vertex struct {
+	index          int
+	pos            Pos
+	direction      int
+	cost           int
+	calculatedCost int
+	total          int
+}
+
+func NewGraph(mapp *Map) Graph {
+	var vertices = make([]Vertex, 0, mapp.hLength*mapp.vLength*2)
+	for y, row := range mapp.grid {
+		for x, cost := range row {
+			vertices = append(vertices, Vertex{pos: Pos{x, y}, direction: PLANE_VERTICAL, cost: cost, total: 1 << 30})
+			vertices = append(vertices, Vertex{pos: Pos{x, y}, direction: PLANE_HORIZONTAL, cost: cost, total: 1 << 30})
+		}
+	}
+	return Graph{vertices, mapp.hLength, mapp.vLength}
+}
+
+const (
+	PLANE_VERTICAL = iota
+	PLANE_HORIZONTAL
+	PLANE_UNDECIDED // special plane for start position
+)

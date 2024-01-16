@@ -11,7 +11,7 @@ import (
 func TestSolution(t *testing.T) {
 	timeStart := time.Now()
 
-	input, err := os.ReadFile("input")
+	input, err := os.ReadFile("test_data")
 	if err != nil {
 		log.Fatal(err)
 	}
