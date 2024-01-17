@@ -31,10 +31,12 @@ func solution(fileName string) int {
 	hLength := len(grid[0])
 	vLength := len(grid)
 	mapp := Map{grid, hLength, vLength, Pos{hLength - 1, vLength - 1}}
-	shortest := Dj(&mapp)
+	part1 := Dj(&mapp, 1, 3)
+	part2 := Dj(&mapp, 4, 10)
 
-	fmt.Printf("Total: %+v\n", shortest)
-	return shortest
+	fmt.Printf("Part1: %+v\n", part1)
+	fmt.Printf("Part2: %+v\n", part2)
+	return part1
 }
 
 type Pos struct {
@@ -42,10 +44,10 @@ type Pos struct {
 	y int
 }
 
-func Dj(mapp *Map) int {
+func Dj(mapp *Map, minSteps, maxSteps int) int {
 	graph := NewGraph(mapp)
 	vertices := graph.vertices
-	vertices[0].direction = PLANE_UNDECIDED
+	vertices[0].direction = PlaneUndecided
 	vertices[0].total = 0
 
 	pq := make(PriorityQueue, len(vertices))
@@ -62,7 +64,7 @@ func Dj(mapp *Map) int {
 		if (*u).pos == mapp.endPos {
 			break
 		}
-		edges := graph.getEdges(u)
+		edges := graph.getEdges(u, minSteps, maxSteps)
 		for _, e := range edges {
 			total := u.total + e.calculatedCost
 			if e.total > total {
@@ -118,41 +120,49 @@ type Graph struct {
 	height   int
 }
 
-func (graph *Graph) getEdges(u *Vertex) []*Vertex {
+func (graph *Graph) getEdges(u *Vertex, minSteps, maxSteps int) []*Vertex {
 	var e []*Vertex
-	if u.direction == PLANE_VERTICAL || u.direction == PLANE_UNDECIDED {
-		for calculatedCost, i := 0, 1; i <= 3; i++ {
-			v := graph.getVertexByPos(u.pos.x, u.pos.y+i, PLANE_HORIZONTAL)
+	if u.direction == PlaneVertical || u.direction == PlaneUndecided {
+		for calculatedCost, i := 0, 1; i <= maxSteps; i++ {
+			v := graph.getVertexByPos(u.pos.x, u.pos.y+i, PlaneHorizontal)
 			if v != nil {
 				calculatedCost += v.cost
-				v.calculatedCost = calculatedCost
-				e = append(e, v)
+				if i >= minSteps {
+					v.calculatedCost = calculatedCost
+					e = append(e, v)
+				}
 			}
 		}
-		for calculatedCost, i := 0, 1; i <= 3; i++ {
-			v := graph.getVertexByPos(u.pos.x, u.pos.y-i, PLANE_HORIZONTAL)
+		for calculatedCost, i := 0, 1; i <= maxSteps; i++ {
+			v := graph.getVertexByPos(u.pos.x, u.pos.y-i, PlaneHorizontal)
 			if v != nil {
 				calculatedCost += v.cost
-				v.calculatedCost = calculatedCost
-				e = append(e, v)
+				if i >= minSteps {
+					v.calculatedCost = calculatedCost
+					e = append(e, v)
+				}
 			}
 		}
 	}
-	if u.direction == PLANE_HORIZONTAL || u.direction == PLANE_UNDECIDED {
-		for calculatedCost, i := 0, 1; i <= 3; i++ {
-			v := graph.getVertexByPos(u.pos.x+i, u.pos.y, PLANE_VERTICAL)
+	if u.direction == PlaneHorizontal || u.direction == PlaneUndecided {
+		for calculatedCost, i := 0, 1; i <= maxSteps; i++ {
+			v := graph.getVertexByPos(u.pos.x+i, u.pos.y, PlaneVertical)
 			if v != nil {
 				calculatedCost += v.cost
-				v.calculatedCost = calculatedCost
-				e = append(e, v)
+				if i >= minSteps {
+					v.calculatedCost = calculatedCost
+					e = append(e, v)
+				}
 			}
 		}
-		for calculatedCost, i := 0, 1; i <= 3; i++ {
-			v := graph.getVertexByPos(u.pos.x-i, u.pos.y, PLANE_VERTICAL)
+		for calculatedCost, i := 0, 1; i <= maxSteps; i++ {
+			v := graph.getVertexByPos(u.pos.x-i, u.pos.y, PlaneVertical)
 			if v != nil {
 				calculatedCost += v.cost
-				v.calculatedCost = calculatedCost
-				e = append(e, v)
+				if i >= minSteps {
+					v.calculatedCost = calculatedCost
+					e = append(e, v)
+				}
 			}
 		}
 	}
@@ -179,15 +189,15 @@ func NewGraph(mapp *Map) Graph {
 	var vertices = make([]Vertex, 0, mapp.hLength*mapp.vLength*2)
 	for y, row := range mapp.grid {
 		for x, cost := range row {
-			vertices = append(vertices, Vertex{pos: Pos{x, y}, direction: PLANE_VERTICAL, cost: cost, total: 1 << 30})
-			vertices = append(vertices, Vertex{pos: Pos{x, y}, direction: PLANE_HORIZONTAL, cost: cost, total: 1 << 30})
+			vertices = append(vertices, Vertex{pos: Pos{x, y}, direction: PlaneVertical, cost: cost, total: 1 << 30})
+			vertices = append(vertices, Vertex{pos: Pos{x, y}, direction: PlaneHorizontal, cost: cost, total: 1 << 30})
 		}
 	}
 	return Graph{vertices, mapp.hLength, mapp.vLength}
 }
 
 const (
-	PLANE_VERTICAL = iota
-	PLANE_HORIZONTAL
-	PLANE_UNDECIDED // special plane for start position
+	PlaneVertical = iota
+	PlaneHorizontal
+	PlaneUndecided // special plane for start position
 )
