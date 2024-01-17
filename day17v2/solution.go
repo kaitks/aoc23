@@ -103,7 +103,6 @@ func (pq *PriorityQueue) Pop() any {
 	n := (*pq).Len()
 	item := (*pq)[n-1]
 	*pq = (*pq)[0 : n-1]
-	item.index = -1
 	return item
 }
 
