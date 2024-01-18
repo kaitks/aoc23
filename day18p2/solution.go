@@ -27,11 +27,12 @@ func solution(fileName string) int {
 		instruction := strings.Fields(verticeStr)[2]
 		iLen := len(instruction)
 		directionInt, _ := strconv.Atoi(instruction[iLen-2 : iLen-1])
-		directionMap := map[int]string{}
-		directionMap[0] = "R"
-		directionMap[1] = "D"
-		directionMap[2] = "L"
-		directionMap[3] = "U"
+		directionMap := map[int]string{
+			0: "R",
+			1: "D",
+			2: "L",
+			3: "U",
+		}
 		direction := directionMap[directionInt]
 		stepStr := instruction[2 : iLen-2]
 		step64, _ := strconv.ParseInt(stepStr, 16, 32)
