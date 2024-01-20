@@ -55,7 +55,7 @@ func solution(fileName string) int {
 			}
 			solutionMap[equation.category] = append(equations, equation)
 		}
-		possibleSolutionMap := map[string]int{}
+		possibleSolutionMap := map[string]Range{}
 		for category, equations := range solutionMap {
 			minVal := 0
 			maxVal := 4000
@@ -70,15 +70,10 @@ func solution(fileName string) int {
 					}
 				}
 			}
-			possibleSolution := max(maxVal-minVal-1, 0)
-			possibleSolutionMap[category] = possibleSolution
+			possibleSolutionMap[category] = Range{minVal, maxVal}
 		}
-		lackCondCount := 4 - len(possibleSolutionMap)
-		for i := 0; i < lackCondCount; i++ {
-			possibleSolutionMap[string(rune(i))] = 3999
-		}
-		total += lo.Reduce(maps.Values(possibleSolutionMap), func(agg int, item int, _ int) int {
-			return agg * item
+		total += lo.Reduce(maps.Values(possibleSolutionMap), func(agg int, item Range, _ int) int {
+			return agg * (item.maxVal - item.minVal - 1)
 		}, 1)
 	}
 	//for _, valid := range valids {
@@ -155,6 +150,11 @@ type Equation struct {
 	category  string
 	operation string
 	target    int
+}
+
+type Range struct {
+	minVal int
+	maxVal int
 }
 
 func (equation *Equation) reverse() Equation {
