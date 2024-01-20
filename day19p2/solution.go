@@ -23,17 +23,8 @@ func solution(fileName string) int {
 	// Create a scanner to read the file line by line
 	raw, _ := os.ReadFile(filePath)
 	data := string(raw)
-	sections := strings.Split(data, "\n\n")
-	workflowsStr := sections[0]
-	workflowMap := map[string]Workflow{}
-	for _, workflowStr := range strings.Split(workflowsStr, "\n") {
-		parts := strings.Split(workflowStr, "{")
-		label := parts[0]
-		workflowStr = parts[1][:len(parts[1])-1]
-		rulesStr := strings.Split(workflowStr, ",")
-		workflowMap[label] = Workflow{label, rulesStr}
-	}
-	acceptedEquations := findEquations(&workflowMap)
+	workflowMap := parseWorkflows(data)
+	acceptedEquations := findEquations(workflowMap)
 	total := 0
 	for _, accEquations := range acceptedEquations {
 		solution := accEquations.toSolution()
@@ -182,4 +173,18 @@ func (s *Solution) print() {
 		fmt.Printf("%d < %s < %d\n", v.minVal, k, v.maxVal)
 	}
 	fmt.Printf("\n\n")
+}
+
+func parseWorkflows(data string) *map[string]Workflow {
+	sections := strings.Split(data, "\n\n")
+	workflowsStr := sections[0]
+	workflowMap := map[string]Workflow{}
+	for _, workflowStr := range strings.Split(workflowsStr, "\n") {
+		parts := strings.Split(workflowStr, "{")
+		label := parts[0]
+		workflowStr = parts[1][:len(parts[1])-1]
+		rulesStr := strings.Split(workflowStr, ",")
+		workflowMap[label] = Workflow{label, rulesStr}
+	}
+	return &workflowMap
 }
