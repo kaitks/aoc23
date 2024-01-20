@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"github.com/samber/lo"
 	"golang.org/x/exp/maps"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -22,18 +24,6 @@ func solution(fileName string) int {
 	raw, _ := os.ReadFile(filePath)
 	data := string(raw)
 	sections := strings.Split(data, "\n\n")
-	ratingsStr := sections[1]
-	var ratings []Rating
-	for _, ratingStr := range strings.Split(ratingsStr, "\n") {
-		withoutBracket := ratingStr[1 : len(ratingStr)-1]
-		rating := Rating{}
-		for _, str := range strings.Split(withoutBracket, ",") {
-			equations := strings.Split(str, "=")
-			value, _ := strconv.Atoi(equations[1])
-			rating[equations[0]] = value
-		}
-		ratings = append(ratings, rating)
-	}
 	workflowsStr := sections[0]
 	workflowMap := map[string]Workflow{}
 	for _, workflowStr := range strings.Split(workflowsStr, "\n") {
@@ -45,8 +35,8 @@ func solution(fileName string) int {
 	}
 	solutions := findSolutions(&workflowMap)
 	total := 0
+	possibles := []Solution{}
 	for _, solution := range solutions {
-		fmt.Printf("Solution: %+v\n", solution)
 		solutionMap := map[string][]Equation{}
 		for _, equation := range solution {
 			equations, exist := solutionMap[equation.category]
@@ -57,8 +47,8 @@ func solution(fileName string) int {
 		}
 		possibleSolutionMap := map[string]Range{}
 		for category, equations := range solutionMap {
-			minVal := 0
-			maxVal := 4000
+			minVal := math.MinInt
+			maxVal := math.MaxInt
 			for _, equation := range equations {
 				if equation.operation == ">" {
 					if minVal < equation.target {
@@ -72,13 +62,13 @@ func solution(fileName string) int {
 			}
 			possibleSolutionMap[category] = Range{minVal, maxVal}
 		}
-		total += lo.Reduce(maps.Values(possibleSolutionMap), func(agg int, item Range, _ int) int {
-			return agg * (item.maxVal - item.minVal - 1)
-		}, 1)
+		possibles = append(possibles, possibleSolutionMap)
 	}
-	//for _, valid := range valids {
-	//	total += lo.Sum(maps.Values(valid))
-	//}
+	for _, possible := range possibles {
+		possible.print()
+		total += possible.distinctCombination()
+	}
+
 	fmt.Printf("Total: %+v\n", total)
 	return total
 }
@@ -87,10 +77,10 @@ func findSolutions(workflowMap *map[string]Workflow) [][]Equation {
 	var solutions [][]Equation
 	starter, _ := (*workflowMap)["in"]
 	accEquations := []Equation{
-		{"x", ">", 0}, {"x", "<", 4000},
-		{"m", ">", 0}, {"m", "<", 4000},
-		{"a", ">", 0}, {"a", "<", 4000},
-		{"s", ">", 0}, {"s", "<", 4000},
+		{"x", ">", 0}, {"x", "<", 4001},
+		{"m", ">", 0}, {"m", "<", 4001},
+		{"a", ">", 0}, {"a", "<", 4001},
+		{"s", ">", 0}, {"s", "<", 4001},
 	}
 	findSolution(workflowMap, &solutions, starter.rulesStr, accEquations)
 	return solutions
@@ -110,14 +100,15 @@ func findSolution(workflowMap *map[string]Workflow, solutions *[][]Equation, rul
 		nextLabel := matches[4]
 		equation := Equation{category, operatorStr, ruleValue}
 		if nextLabel == "A" {
-			*solutions = append(*solutions, append(accEquations, equation))
-			findSolution(workflowMap, solutions, rulesStr[1:], append(append([]Equation{}, accEquations...), equation.reverse()))
+			*solutions = append(*solutions, append(append([]Equation{}, accEquations...), equation))
+			findSolution(workflowMap, solutions, rulesStr[1:], append(accEquations, equation.reverse()))
 		} else if nextLabel == "R" {
 			findSolution(workflowMap, solutions, rulesStr[1:], append(accEquations, equation.reverse()))
 		} else {
 			if workflow, exist := (*workflowMap)[nextLabel]; exist {
-				findSolution(workflowMap, solutions, workflow.rulesStr, append(accEquations, equation))
+				findSolution(workflowMap, solutions, workflow.rulesStr, append(append([]Equation{}, accEquations...), equation))
 			}
+			findSolution(workflowMap, solutions, rulesStr[1:], append(accEquations, equation.reverse()))
 		}
 	} else {
 		nextLabel := ruleStr
@@ -134,16 +125,9 @@ func findSolution(workflowMap *map[string]Workflow, solutions *[][]Equation, rul
 	return
 }
 
-type Rating map[string]int
-
 type Workflow struct {
 	label    string
 	rulesStr []string
-}
-
-type Rule struct {
-	nextLabel string
-	equations []Equation
 }
 
 type Equation struct {
@@ -173,3 +157,22 @@ func (equation *Equation) reverse() Equation {
 }
 
 var re = regexp.MustCompile(`^(\w+)([<>])(\d*):(\w+)$`)
+
+type Solution map[string]Range
+
+func (s *Solution) distinctCombination() int {
+	return lo.Reduce(maps.Values(*s), func(agg int, rg Range, _ int) int {
+		return agg * max(rg.maxVal-rg.minVal-1, 0)
+	}, 1)
+}
+
+func (s *Solution) print() {
+	fmt.Printf("Solution:\n")
+	keys := maps.Keys(*s)
+	slices.Sort(keys)
+	for _, k := range keys {
+		v, _ := (*s)[k]
+		fmt.Printf("%d < %s < %d\n", v.minVal, k, v.maxVal)
+	}
+	fmt.Printf("\n\n")
+}
