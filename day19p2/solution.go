@@ -172,12 +172,4 @@ func (equation *Equation) reverse() Equation {
 	return Equation{equation.category, operation, target}
 }
 
-func less(a, b int) bool {
-	return a < b
-}
-
-func more(a, b int) bool {
-	return a > b
-}
-
 var re = regexp.MustCompile(`^(\w+)([<>])(\d*):(\w+)$`)
