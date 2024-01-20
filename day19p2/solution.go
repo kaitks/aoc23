@@ -33,48 +33,20 @@ func solution(fileName string) int {
 		rulesStr := strings.Split(workflowStr, ",")
 		workflowMap[label] = Workflow{label, rulesStr}
 	}
-	solutions := findSolutions(&workflowMap)
+	acceptedEquations := findEquations(&workflowMap)
 	total := 0
-	possibles := []Solution{}
-	for _, solution := range solutions {
-		solutionMap := map[string][]Equation{}
-		for _, equation := range solution {
-			equations, exist := solutionMap[equation.category]
-			if !exist {
-				equations = []Equation{}
-			}
-			solutionMap[equation.category] = append(equations, equation)
-		}
-		possibleSolutionMap := map[string]Range{}
-		for category, equations := range solutionMap {
-			minVal := math.MinInt
-			maxVal := math.MaxInt
-			for _, equation := range equations {
-				if equation.operation == ">" {
-					if minVal < equation.target {
-						minVal = equation.target
-					}
-				} else if equation.operation == "<" {
-					if maxVal > equation.target {
-						maxVal = equation.target
-					}
-				}
-			}
-			possibleSolutionMap[category] = Range{minVal, maxVal}
-		}
-		possibles = append(possibles, possibleSolutionMap)
-	}
-	for _, possible := range possibles {
-		possible.print()
-		total += possible.distinctCombination()
+	for _, accEquations := range acceptedEquations {
+		solution := accEquations.toSolution()
+		solution.print()
+		total += solution.distinctCombination()
 	}
 
 	fmt.Printf("Total: %+v\n", total)
 	return total
 }
 
-func findSolutions(workflowMap *map[string]Workflow) [][]Equation {
-	var solutions [][]Equation
+func findEquations(workflowMap *map[string]Workflow) []AccEquation {
+	var acceptedEquations []AccEquation
 	starter, _ := (*workflowMap)["in"]
 	accEquations := []Equation{
 		{"x", ">", 0}, {"x", "<", 4001},
@@ -82,11 +54,11 @@ func findSolutions(workflowMap *map[string]Workflow) [][]Equation {
 		{"a", ">", 0}, {"a", "<", 4001},
 		{"s", ">", 0}, {"s", "<", 4001},
 	}
-	findSolution(workflowMap, &solutions, starter.rulesStr, accEquations)
-	return solutions
+	findEquationsRcs(workflowMap, &acceptedEquations, starter.rulesStr, accEquations)
+	return acceptedEquations
 }
 
-func findSolution(workflowMap *map[string]Workflow, solutions *[][]Equation, rulesStr []string, accEquations []Equation) {
+func findEquationsRcs(workflowMap *map[string]Workflow, acceptedEquations *[]AccEquation, rulesStr []string, accEquation AccEquation) {
 	lenRules := len(rulesStr)
 	if lenRules == 0 {
 		return
@@ -100,25 +72,25 @@ func findSolution(workflowMap *map[string]Workflow, solutions *[][]Equation, rul
 		nextLabel := matches[4]
 		equation := Equation{category, operatorStr, ruleValue}
 		if nextLabel == "A" {
-			*solutions = append(*solutions, append(append([]Equation{}, accEquations...), equation))
-			findSolution(workflowMap, solutions, rulesStr[1:], append(accEquations, equation.reverse()))
+			*acceptedEquations = append(*acceptedEquations, append(accEquation.Clone(), equation))
+			findEquationsRcs(workflowMap, acceptedEquations, rulesStr[1:], append(accEquation, equation.reverse()))
 		} else if nextLabel == "R" {
-			findSolution(workflowMap, solutions, rulesStr[1:], append(accEquations, equation.reverse()))
+			findEquationsRcs(workflowMap, acceptedEquations, rulesStr[1:], append(accEquation, equation.reverse()))
 		} else {
 			if workflow, exist := (*workflowMap)[nextLabel]; exist {
-				findSolution(workflowMap, solutions, workflow.rulesStr, append(append([]Equation{}, accEquations...), equation))
+				findEquationsRcs(workflowMap, acceptedEquations, workflow.rulesStr, append(accEquation.Clone(), equation))
 			}
-			findSolution(workflowMap, solutions, rulesStr[1:], append(accEquations, equation.reverse()))
+			findEquationsRcs(workflowMap, acceptedEquations, rulesStr[1:], append(accEquation, equation.reverse()))
 		}
 	} else {
 		nextLabel := ruleStr
 		if nextLabel == "A" {
-			*solutions = append(*solutions, accEquations)
+			*acceptedEquations = append(*acceptedEquations, accEquation)
 		} else if nextLabel == "R" {
 			return
 		} else {
 			if workflow, exist := (*workflowMap)[nextLabel]; exist {
-				findSolution(workflowMap, solutions, workflow.rulesStr, accEquations)
+				findEquationsRcs(workflowMap, acceptedEquations, workflow.rulesStr, accEquation)
 			}
 		}
 	}
@@ -128,6 +100,41 @@ func findSolution(workflowMap *map[string]Workflow, solutions *[][]Equation, rul
 type Workflow struct {
 	label    string
 	rulesStr []string
+}
+
+type AccEquation []Equation
+
+func (accEquation *AccEquation) Clone() AccEquation {
+	return append(make(AccEquation, 0, len(*accEquation)), *accEquation...)
+}
+
+func (accEquation *AccEquation) toSolution() Solution {
+	accEquationsMap := map[string]AccEquation{}
+	for _, equation := range *accEquation {
+		equations, exist := accEquationsMap[equation.category]
+		if !exist {
+			equations = []Equation{}
+		}
+		accEquationsMap[equation.category] = append(equations, equation)
+	}
+	solution := Solution{}
+	for category, equations := range accEquationsMap {
+		minVal := math.MinInt
+		maxVal := math.MaxInt
+		for _, equation := range equations {
+			if equation.operation == ">" {
+				if minVal < equation.target {
+					minVal = equation.target
+				}
+			} else if equation.operation == "<" {
+				if maxVal > equation.target {
+					maxVal = equation.target
+				}
+			}
+		}
+		solution[category] = Range{minVal, maxVal}
+	}
+	return solution
 }
 
 type Equation struct {
