@@ -20,16 +20,23 @@ func solution(fileName string) int {
 	raw, _ := os.ReadFile(filePath)
 	data := string(raw)
 	system := parseSystem(data)
-	system.broadcaster.Send(Low)
-	total := 0
+	lowPulse := 0
+	highPulse := 0
+	for i := 0; i < 1000; i++ {
+		system.button.Send(Low)
+	}
+	for _, command := range system.sendPulseCommands {
+		if command.Pulse == Low {
+			lowPulse++
+		} else if command.Pulse == High {
+			highPulse++
+		}
+		//fmt.Printf("%s -%s-> %s\n", command.Sender, command.Pulse, command.Receiver)
+	}
+	total := lowPulse * highPulse
 
-	fmt.Printf("Total: %+v\n", total)
+	fmt.Printf("\nTotal: %+v\n", total)
 	return total
-}
-
-type HandlePulse interface {
-	Receive(pulse Pulse, name string)
-	Send(pulse Pulse)
 }
 
 type Module struct {
@@ -39,21 +46,14 @@ type Module struct {
 	InputModule map[string]Pulse
 	Status      Status
 	OutputPulse Pulse
-	HandlePulse
+	System      *System
 }
 
-func (module Module) Send(pulse Pulse) {
-	Send(module.Destination, pulse, module.Name)
+func (module *Module) Send(pulse Pulse) {
+	module.System.SendPulse(module, pulse)
 }
 
-func Send(destinations []*Module, pulse Pulse, name string) {
-	for _, destination := range destinations {
-		fmt.Printf("%s -%s-> %s\n", name, pulse, destination.Name)
-		(*destination).Receive(pulse, name)
-	}
-}
-
-func (module Module) Receive(pulse Pulse, name string) {
+func (module *Module) Receive(pulse Pulse, name string) {
 	switch module.Type {
 	case Broadcaster:
 		module.Send(pulse)
@@ -90,8 +90,8 @@ type Type int32
 
 const (
 	Broadcaster = 'b'
-	Flipflop    = 'f'
-	Conjuntion  = 'c'
+	Flipflop    = '%'
+	Conjuntion  = '&'
 )
 
 const (
@@ -113,11 +113,21 @@ func FromStatus(status Status) Pulse {
 }
 
 type System struct {
-	moduleMap   map[string]*Module
-	broadcaster *Module
+	moduleMap         map[string]*Module
+	button            *Module
+	sendPulseCommands []SendPulseCommand
 }
 
-func parseSystem(data string) System {
+func (system *System) SendPulse(module *Module, pulse Pulse) {
+	for _, destination := range module.Destination {
+		system.sendPulseCommands = append(system.sendPulseCommands, SendPulseCommand{module.Name, pulse, destination.Name})
+	}
+	for _, destination := range module.Destination {
+		(*destination).Receive(pulse, module.Name)
+	}
+}
+
+func parseSystem(data string) *System {
 	system := System{moduleMap: map[string]*Module{}}
 	modulesStr := strings.Split(data, "\n")
 	var destinations []DestinationMapping
@@ -128,35 +138,52 @@ func parseSystem(data string) System {
 		destinationsStr := parts[1]
 		destinationsName := strings.Split(destinationsStr, ", ")
 		var module Module
-		if nameStr == "broadcaster" {
+
+		switch nameStr[:1] {
+		case "b":
 			name = nameStr
 			module = Module{Type: Broadcaster}
-			system.broadcaster = &module
-		} else if nameStr[:1] == "%" {
+		case "%":
 			name = nameStr[1:]
 			module = Module{Type: Flipflop, Status: Off}
-		} else if nameStr[:1] == "&" {
+		case "&":
 			name = nameStr[1:]
 			module = Module{Type: Conjuntion, OutputPulse: High, InputModule: map[string]Pulse{}}
 		}
+		module.System = &system
 		module.Name = name
 		system.moduleMap[module.Name] = &module
 		destinations = append(destinations, DestinationMapping{&module, destinationsName})
 	}
 	for _, destinationMapping := range destinations {
 		module := destinationMapping.Module
+		if module.Type == Broadcaster {
+			button := Module{Type: Broadcaster, Name: "button", System: &system, Destination: []*Module{module}}
+			system.moduleMap[button.Name] = &button
+			system.button = &button
+		}
 		for _, name := range destinationMapping.Destinations {
-			destination := system.moduleMap[name]
+			destination, exists := system.moduleMap[name]
+			if !exists {
+				destination = &Module{Type: Broadcaster, Name: "output", System: &system}
+				system.moduleMap[name] = destination
+			}
 			module.Destination = append(module.Destination, destination)
 			if destination.Type == Conjuntion {
 				destination.InputModule[module.Name] = Low
 			}
 		}
 	}
-	return system
+	return &system
 }
 
 type DestinationMapping struct {
 	Module       *Module
 	Destinations []string
+}
+
+type SendPulseCommand struct {
+	Sender   string
+	Pulse    Pulse
+	Receiver string
 }
