@@ -28,10 +28,10 @@ func solution(fileName string) int {
 		system.buttonPressed++
 		system.button.Send(Low)
 		for {
-			if system.sendPulseCommands.Len() == 0 {
+			if system.SendPulseCommandsQueue.Len() == 0 {
 				break
 			}
-			command := system.sendPulseCommands.PopFront()
+			command := system.SendPulseCommandsQueue.PopFront()
 			if command.Receiver == lsModule && command.Pulse == High {
 				if _, exists := system.lsLoopMap[command.Sender.Name]; !exists {
 					system.lsLoopMap[command.Sender.Name] = system.buttonPressed
@@ -62,7 +62,9 @@ type Module struct {
 }
 
 func (module *Module) Send(pulse Pulse) {
-	module.System.SendPulse(module, pulse)
+	for _, destination := range module.Destination {
+		module.System.SendPulseCommandsQueue.PushBack(SendPulseCommand{module, pulse, destination})
+	}
 }
 
 func (module *Module) Receive(pulse Pulse, name string) {
@@ -126,21 +128,15 @@ func FromStatus(status Status) Pulse {
 }
 
 type System struct {
-	moduleMap         map[string]*Module
-	button            *Module
-	sendPulseCommands *deque.Deque[SendPulseCommand]
-	buttonPressed     int
-	lsLoopMap         map[string]int
-}
-
-func (system *System) SendPulse(module *Module, pulse Pulse) {
-	for _, destination := range module.Destination {
-		system.sendPulseCommands.PushBack(SendPulseCommand{module, pulse, destination})
-	}
+	moduleMap              map[string]*Module
+	button                 *Module
+	SendPulseCommandsQueue *deque.Deque[SendPulseCommand]
+	buttonPressed          int
+	lsLoopMap              map[string]int
 }
 
 func parseSystem(data string) *System {
-	system := System{moduleMap: map[string]*Module{}, lsLoopMap: map[string]int{}, sendPulseCommands: deque.New[SendPulseCommand]()}
+	system := System{moduleMap: map[string]*Module{}, lsLoopMap: map[string]int{}, SendPulseCommandsQueue: deque.New[SendPulseCommand]()}
 	modulesStr := strings.Split(data, "\n")
 	var destinations []DestinationMapping
 	for _, moduleStr := range modulesStr {
