@@ -32,6 +32,11 @@ func solution(fileName string) int {
 				break
 			}
 			command := system.sendPulseCommands.PopFront()
+			if command.Receiver == lsModule && command.Pulse == High {
+				if _, exists := system.lsLoopMap[command.Sender.Name]; !exists {
+					system.lsLoopMap[command.Sender.Name] = system.buttonPressed
+				}
+			}
 			command.Receiver.Receive(command.Pulse, command.Sender.Name)
 		}
 		if len(system.lsLoopMap) == len(lsModule.InputModule) {
@@ -39,7 +44,10 @@ func solution(fileName string) int {
 		}
 	}
 
-	fmt.Printf("\nTotal: %+v\n", maps.Values(system.lsLoopMap))
+	minPress = lo.Reduce(maps.Values(system.lsLoopMap), func(agg int, item int, _ int) int {
+		return agg * item
+	}, 1)
+	fmt.Printf("\nTotal: %+v\n", minPress)
 	return minPress
 }
 
@@ -62,9 +70,7 @@ func (module *Module) Receive(pulse Pulse, name string) {
 	case Broadcaster:
 		module.Send(pulse)
 	case Flipflop:
-		if pulse == High {
-			return
-		} else if pulse == Low {
+		if pulse == Low {
 			module.Status = !module.Status
 			module.Send(FromStatus(module.Status))
 		}
@@ -78,12 +84,14 @@ func (module *Module) Receive(pulse Pulse, name string) {
 			}
 		})
 		sum := lo.Sum(values)
-		if sum == 0 {
-			module.OutputPulse = High
-		} else if sum == len(values) {
+		if sum == len(values) {
 			module.OutputPulse = Low
+		} else {
+			module.OutputPulse = High
 		}
 		module.Send(module.OutputPulse)
+	default:
+		return
 	}
 }
 
@@ -127,11 +135,6 @@ type System struct {
 
 func (system *System) SendPulse(module *Module, pulse Pulse) {
 	for _, destination := range module.Destination {
-		if destination.Name == "ls" && pulse == High {
-			if _, exists := system.lsLoopMap[module.Name]; !exists {
-				system.lsLoopMap[module.Name] = system.buttonPressed
-			}
-		}
 		system.sendPulseCommands.PushBack(SendPulseCommand{module, pulse, destination})
 	}
 }
@@ -174,7 +177,7 @@ func parseSystem(data string) *System {
 		for _, name := range destinationMapping.Destinations {
 			destination, exists := system.moduleMap[name]
 			if !exists {
-				destination = &Module{Type: Broadcaster, Name: "output", System: &system}
+				destination = &Module{Type: Broadcaster, Name: name, System: &system}
 				system.moduleMap[name] = destination
 			}
 			module.Destination = append(module.Destination, destination)
