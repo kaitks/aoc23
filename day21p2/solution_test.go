@@ -3,7 +3,7 @@ package day21p2
 import "testing"
 
 func TestSolution(t *testing.T) {
-	result := solution("input", 64)
+	result := solution("input", 26501365)
 	if result != 3503 {
 		t.Fail()
 	}
