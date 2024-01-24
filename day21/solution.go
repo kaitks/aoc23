@@ -22,16 +22,30 @@ func solution(fileName string, maxStep int) int {
 	data := string(raw)
 	mapp := parseMap(data)
 	stepQueue := deque.Deque[PosStep]{}
-	seen := mapset.NewSet[Pos]()
+	seenMap := map[Pos]int{}
 	stepQueue.PushBack(PosStep{Pos: mapp.S, Step: 0})
+
+	remain := maxStep % 2
 
 	for {
 		if stepQueue.Len() == 0 {
 			break
 		}
 		pos := stepQueue.PopFront()
+		posStepRemain := pos.Step % 2
+		if posStepRemain == remain {
+			seenStep, exists := seenMap[pos.Pos]
+			if !exists {
+				seenMap[pos.Pos] = pos.Step
+			} else {
+				if pos.Step < seenStep {
+					seenMap[pos.Pos] = pos.Step
+				} else {
+					continue
+				}
+			}
+		}
 		if pos.Step == maxStep {
-			seen.Add(pos.Pos)
 			continue
 		}
 		nextPositions := pos.step()
@@ -43,7 +57,7 @@ func solution(fileName string, maxStep int) int {
 		}
 	}
 
-	total := seen.Cardinality()
+	total := len(seenMap)
 	fmt.Printf("\nTotal: %+v\n", total)
 	return total
 }

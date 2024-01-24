@@ -3,8 +3,8 @@ package day20
 import "testing"
 
 func TestSolution(t *testing.T) {
-	result := solution("input", 6)
-	if result != 869395600 {
+	result := solution("input", 64)
+	if result != 3503 {
 		t.Fail()
 	}
 }
