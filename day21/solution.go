@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func solution(fileName string) int {
+func solution(fileName string, maxStep int) int {
 	pwd, _ := os.Getwd()
 	// Get the file name from the command line argument
 	filePath := filepath.Join(pwd, fileName)
@@ -21,24 +21,25 @@ func solution(fileName string) int {
 	raw, _ := os.ReadFile(filePath)
 	data := string(raw)
 	mapp := parseMap(data)
-	stepQueue := deque.Deque[Pos]{}
+	stepQueue := deque.Deque[PosStep]{}
 	seen := mapset.NewSet[Pos]()
-	stepQueue.PushBack(mapp.S)
-	seen.Add(mapp.S)
-	step := 1
+	stepQueue.PushBack(PosStep{Pos: mapp.S, Step: 0})
 
 	for {
 		if stepQueue.Len() == 0 {
 			break
 		}
 		pos := stepQueue.PopFront()
+		if pos.Step == maxStep {
+			seen.Add(pos.Pos)
+			continue
+		}
 		nextPositions := pos.step()
 		nextPositions = lo.Filter(nextPositions, func(next Pos, _ int) bool {
-			return next.X >= 0 && next.X < mapp.Width && next.Y >= 0 && next.Y < mapp.Height && !seen.Contains(next) && !mapp.Rocks.Contains(next)
+			return next.X >= 0 && next.X < mapp.Width && next.Y >= 0 && next.Y < mapp.Height && !mapp.Rocks.Contains(next)
 		})
 		for _, next := range nextPositions {
-			stepQueue.PushBack(next)
-			seen.Add(next)
+			stepQueue.PushBack(PosStep{Pos: next, Step: pos.Step + 1})
 		}
 	}
 
@@ -60,6 +61,11 @@ type Pos struct {
 	Y int
 }
 
+type PosStep struct {
+	Pos
+	Step int
+}
+
 func (pos *Pos) step() []Pos {
 	x := pos.X
 	y := pos.Y
@@ -71,15 +77,17 @@ func parseMap(data string) *Map {
 	grids := [][]int32{}
 	var S Pos
 	Rocks := mapset.NewSet[Pos]()
-	for y, row := range rows {
-		for x, char := range row {
-			grids[y][x] = char
+	for y, rowStr := range rows {
+		row := []int32{}
+		for x, char := range rowStr {
+			row = append(row, char)
 			if char == 'S' {
 				S = Pos{x, y}
 			} else if char == '#' {
 				Rocks.Add(Pos{x, y})
 			}
 		}
+		grids = append(grids, row)
 	}
 	Height := len(rows)
 	Width := len(grids[0])
