@@ -24,11 +24,12 @@ func solution(fileName string, maxStep int) int {
 	var a []int
 	n := 0
 	for {
-		a = append(a, getReachablePosQuadraticByN(mapp, maxStep, n))
+		a = append(a, fnBfs(mapp, maxStep, n))
 		n++
 		if len(a) >= 4 {
 			fd := []int{a[1] - a[0], a[2] - a[1], a[3] - a[2]}
 			sd := []int{fd[1] - fd[0], fd[2] - fd[1]}
+			fmt.Printf("n : %d\n", n)
 			fmt.Printf("fd: %v\n", fd)
 			fmt.Printf("sd: %v\n\n", sd)
 			if sd[1] == sd[0] {
@@ -39,33 +40,40 @@ func solution(fileName string, maxStep int) int {
 		}
 	}
 
-	alpha := a[0]
-	beta := a[1]
-	gamma := a[2]
+	f := genQuadraticFunc(a[0], a[1], a[2])
+	offset := n - 4
+	size := mapp.Size
+	x := maxStep/(2*size) - offset
 
-	reach := getReachablePosQuadratic(alpha, beta, gamma, mapp, maxStep, n)
-	fmt.Printf("\nStep: %d, Total: %+v\n", maxStep, reach)
+	reach := 0
+	if x >= 0 {
+		reach = f(x)
+	} else {
+		reach = bfs(mapp, maxStep)
+	}
+
+	fmt.Printf("Step: %d, Reach: %+v\n", maxStep, reach)
 	return reach
 }
 
-func getReachablePosQuadratic(alpha, beta, gamma int, mapp *Map, maxStep int, n int) int {
+func genQuadraticFunc(alpha, beta, gamma int) func(int) int {
 	c := alpha
 	a := (gamma - 2*beta + c) / 2
 	b := beta - c - a
-	size := mapp.Height
-	offset := n - 4
-	step := maxStep/(2*size) - offset
-	return a*step*step + b*step + c
+	fmt.Printf("Quadration: %dx^2 + %dx + %d\n", a, b, c)
+	return func(step int) int {
+		return a*step*step + b*step + c
+	}
 }
 
-func getReachablePosQuadraticByN(mapp *Map, maxStep int, n int) int {
-	size := mapp.Height
+func fnBfs(mapp *Map, maxStep int, n int) int {
+	size := mapp.Size
 	original := maxStep % (2 * size)
 	step := original + 2*n*size
-	return getReachablePos(mapp, step)
+	return bfs(mapp, step)
 }
 
-func getReachablePos(mapp *Map, maxStep int) int {
+func bfs(mapp *Map, maxStep int) int {
 	stepQueue := deque.Deque[PosStep]{}
 	seenMap := map[Pos]int{}
 	stepQueue.PushBack(PosStep{Pos: mapp.S, Step: 0})
@@ -98,14 +106,14 @@ func getReachablePos(mapp *Map, maxStep int) int {
 			var relativeX int
 			var relativeY int
 			if next.X < 0 {
-				relativeX = mapp.Width + (next.X % mapp.Width)
+				relativeX = mapp.Size + (next.X % mapp.Size)
 			} else {
-				relativeX = next.X % mapp.Width
+				relativeX = next.X % mapp.Size
 			}
 			if next.Y < 0 {
-				relativeY = mapp.Height + (next.Y % mapp.Height)
+				relativeY = mapp.Size + (next.Y % mapp.Size)
 			} else {
-				relativeY = next.Y % mapp.Height
+				relativeY = next.Y % mapp.Size
 			}
 			return !mapp.Rocks.Contains(Pos{relativeX, relativeY})
 		})
@@ -120,11 +128,10 @@ func getReachablePos(mapp *Map, maxStep int) int {
 }
 
 type Map struct {
-	Grid   [][]int32
-	Width  int
-	Height int
-	Rocks  mapset.Set[Pos]
-	S      Pos
+	Grid  [][]int32
+	Size  int
+	Rocks mapset.Set[Pos]
+	S     Pos
 }
 
 type Pos struct {
@@ -160,7 +167,6 @@ func parseMap(data string) *Map {
 		}
 		grids = append(grids, row)
 	}
-	Height := len(rows)
-	Width := len(grids[0])
-	return &Map{Grid: grids, Width: Width, Height: Height, Rocks: Rocks, S: S}
+	Size := len(rows)
+	return &Map{Grid: grids, Size: Size, Rocks: Rocks, S: S}
 }

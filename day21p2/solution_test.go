@@ -10,6 +10,12 @@ func TestSolution(t *testing.T) {
 }
 
 func TestSolutionT(t *testing.T) {
+	if solution("test_data", 6) != 16 {
+		t.Fail()
+	}
+	if solution("test_data", 10) != 50 {
+		t.Fail()
+	}
 	if solution("test_data", 50) != 1594 {
 		t.Fail()
 	}
