@@ -21,6 +21,51 @@ func solution(fileName string, maxStep int) int {
 	raw, _ := os.ReadFile(filePath)
 	data := string(raw)
 	mapp := parseMap(data)
+	var a []int
+	n := 0
+	for {
+		a = append(a, getReachablePosQuadraticByN(mapp, maxStep, n))
+		n++
+		if len(a) >= 4 {
+			fd := []int{a[1] - a[0], a[2] - a[1], a[3] - a[2]}
+			sd := []int{fd[1] - fd[0], fd[2] - fd[1]}
+			fmt.Printf("fd: %v\n", fd)
+			fmt.Printf("sd: %v\n\n", sd)
+			if sd[1] == sd[0] {
+				break
+			} else {
+				a = a[1:]
+			}
+		}
+	}
+
+	alpha := a[0]
+	beta := a[1]
+	gamma := a[2]
+
+	reach := getReachablePosQuadratic(alpha, beta, gamma, mapp, maxStep, n)
+	fmt.Printf("\nStep: %d, Total: %+v\n", maxStep, reach)
+	return reach
+}
+
+func getReachablePosQuadratic(alpha, beta, gamma int, mapp *Map, maxStep int, n int) int {
+	c := alpha
+	a := (gamma - 2*beta + c) / 2
+	b := beta - c - a
+	size := mapp.Height
+	offset := n - 4
+	step := maxStep/(2*size) - offset
+	return a*step*step + b*step + c
+}
+
+func getReachablePosQuadraticByN(mapp *Map, maxStep int, n int) int {
+	size := mapp.Height
+	original := maxStep % (2 * size)
+	step := original + 2*n*size
+	return getReachablePos(mapp, step)
+}
+
+func getReachablePos(mapp *Map, maxStep int) int {
 	stepQueue := deque.Deque[PosStep]{}
 	seenMap := map[Pos]int{}
 	stepQueue.PushBack(PosStep{Pos: mapp.S, Step: 0})
@@ -70,7 +115,7 @@ func solution(fileName string, maxStep int) int {
 	}
 
 	total := len(seenMap)
-	fmt.Printf("\nTotal: %+v\n", total)
+	//fmt.Printf("\nStep: %d, Total: %+v\n", maxStep, total)
 	return total
 }
 
@@ -100,11 +145,11 @@ func (pos *Pos) step() []Pos {
 
 func parseMap(data string) *Map {
 	rows := strings.Split(data, "\n")
-	grids := [][]int32{}
+	var grids [][]int32
 	var S Pos
 	Rocks := mapset.NewSet[Pos]()
 	for y, rowStr := range rows {
-		row := []int32{}
+		var row []int32
 		for x, char := range rowStr {
 			row = append(row, char)
 			if char == 'S' {
