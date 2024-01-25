@@ -2,7 +2,6 @@ package day21p2
 
 import (
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/gammazero/deque"
 	"github.com/samber/lo"
 	"os"
@@ -103,19 +102,9 @@ func bfs(mapp *Map, maxStep int) int {
 		}
 		nextPositions := pos.step()
 		nextPositions = lo.Filter(nextPositions, func(next Pos, _ int) bool {
-			var relativeX int
-			var relativeY int
-			if next.X < 0 {
-				relativeX = mapp.Size + (next.X % mapp.Size)
-			} else {
-				relativeX = next.X % mapp.Size
-			}
-			if next.Y < 0 {
-				relativeY = mapp.Size + (next.Y % mapp.Size)
-			} else {
-				relativeY = next.Y % mapp.Size
-			}
-			return !mapp.Rocks.Contains(Pos{relativeX, relativeY})
+			relativeX := mod(next.X, mapp.Size)
+			relativeY := mod(next.Y, mapp.Size)
+			return !(mapp.Grid[relativeY][relativeX] == '#')
 		})
 		for _, next := range nextPositions {
 			stepQueue.PushBack(PosStep{Pos: next, Step: pos.Step + 1})
@@ -123,15 +112,13 @@ func bfs(mapp *Map, maxStep int) int {
 	}
 
 	total := len(seenMap)
-	//fmt.Printf("\nStep: %d, Total: %+v\n", maxStep, total)
 	return total
 }
 
 type Map struct {
-	Grid  [][]int32
-	Size  int
-	Rocks mapset.Set[Pos]
-	S     Pos
+	Grid [][]int32
+	Size int
+	S    Pos
 }
 
 type Pos struct {
@@ -154,19 +141,24 @@ func parseMap(data string) *Map {
 	rows := strings.Split(data, "\n")
 	var grids [][]int32
 	var S Pos
-	Rocks := mapset.NewSet[Pos]()
 	for y, rowStr := range rows {
 		var row []int32
 		for x, char := range rowStr {
 			row = append(row, char)
 			if char == 'S' {
 				S = Pos{x, y}
-			} else if char == '#' {
-				Rocks.Add(Pos{x, y})
 			}
 		}
 		grids = append(grids, row)
 	}
 	Size := len(rows)
-	return &Map{Grid: grids, Size: Size, Rocks: Rocks, S: S}
+	return &Map{Grid: grids, Size: Size, S: S}
+}
+
+func mod(a int, m int) int {
+	a %= m
+	if a < 0 {
+		a += m
+	}
+	return a
 }
