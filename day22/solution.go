@@ -22,13 +22,23 @@ func solution(fileName string) int {
 	raw, _ := os.ReadFile(filePath)
 	data := string(raw)
 	bricks := parseData(data)
-	bricks = append(bricks, &Brick{x: Range{0, math.MaxInt}, y: Range{0, math.MaxInt}, z: Range{0, 0}})
-	sort.Sort(Bricks(bricks))
+	bricks = append(bricks, &Brick{id: 0, x: Range{0, math.MaxInt}, y: Range{0, math.MaxInt}, z: Range{0, 0}})
+	sort.Slice(bricks, func(i, j int) bool {
+		return bricks[i].z.start < bricks[j].z.end
+	})
 	for i := 1; i < len(bricks); i++ {
 		canDrop := true
-		for j := i - 1; j >= 0; j-- {
-			top := bricks[i]
-			bottom := bricks[j]
+		top := bricks[i]
+		bottoms := make([]*Brick, 0, len(bricks[:i]))
+		for _, brick := range bricks[:i] {
+			if brick.z.end < top.z.start {
+				bottoms = append(bottoms, brick)
+			}
+		}
+		sort.Slice(bottoms, func(i, j int) bool {
+			return bottoms[i].z.end > bottoms[j].z.end
+		})
+		for _, bottom := range bottoms {
 			if top.overlap(bottom) {
 				if canDrop {
 					newZ := Range{bottom.z.end + 1, bottom.z.end + 1 + top.z.end - top.z.start}
@@ -39,6 +49,9 @@ func solution(fileName string) int {
 					bottom.support = append(bottom.support, top)
 					top.supportedBy = append(top.supportedBy, bottom)
 				}
+				if top.z.start > bottom.z.end+1 {
+					break
+				}
 			}
 		}
 	}
@@ -47,15 +60,18 @@ func solution(fileName string) int {
 
 	for _, brick := range bricks {
 		canBeRemoved := true
-		if len(brick.support) > 0 {
-			for _, supported := range brick.support {
-				if len(supported.supportedBy) == 1 {
-					canBeRemoved = false
-					break
-				}
+		for _, supporting := range brick.support {
+			if len(supporting.supportedBy) == 1 {
+				canBeRemoved = false
+				break
 			}
 		}
 		if canBeRemoved {
+			//for _, supporting := range brick.support {
+			//	supporting.supportedBy = slices.DeleteFunc(supporting.supportedBy, func(supportedBy *Brick) bool {
+			//		return supportedBy == brick
+			//	})
+			//}
 			disintegrate = append(disintegrate, brick)
 		}
 	}
@@ -65,6 +81,7 @@ func solution(fileName string) int {
 }
 
 type Brick struct {
+	id          int
 	x, y, z     Range
 	support     []*Brick
 	supportedBy []*Brick
@@ -77,7 +94,7 @@ type Range struct {
 func parseData(data string) []*Brick {
 	rows := strings.Split(data, "\n")
 	var bricks []*Brick
-	for _, row := range rows {
+	for i, row := range rows {
 		ranges := strings.Split(row, "~")
 		start := lo.Map(strings.Split(ranges[0], ","), func(str string, _ int) int {
 			number, _ := strconv.Atoi(str)
@@ -87,24 +104,12 @@ func parseData(data string) []*Brick {
 			number, _ := strconv.Atoi(str)
 			return number
 		})
-		bricks = append(bricks, &Brick{x: Range{start[0], end[0]}, y: Range{start[1], end[1]}, z: Range{start[2], end[2]}})
+		bricks = append(bricks, &Brick{id: i + 1, x: Range{start[0], end[0]}, y: Range{start[1], end[1]}, z: Range{start[2], end[2]}})
 	}
 	return bricks
 }
 
 type Bricks []*Brick
-
-func (bricks Bricks) Len() int {
-	return len(bricks)
-}
-
-func (bricks Bricks) Less(i, j int) bool {
-	return bricks[i].z.start < bricks[j].z.end
-}
-
-func (bricks Bricks) Swap(i, j int) {
-	bricks[i], bricks[j] = bricks[j], bricks[i]
-}
 
 func (brick *Brick) overlap(other *Brick) bool {
 	return isRangeOverlap(brick.x, other.x) && isRangeOverlap(brick.y, other.y)
