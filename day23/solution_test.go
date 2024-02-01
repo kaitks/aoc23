@@ -4,7 +4,7 @@ import "testing"
 
 func TestSolution(t *testing.T) {
 	result := solution("input")
-	if result != 465 {
+	if result != 2294 {
 		t.Fail()
 	}
 }

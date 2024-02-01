@@ -80,9 +80,9 @@ type Point struct {
 
 func parseData(data string) *Map {
 	rows := strings.Split(data, "\n")
-	grids := [][]int32{}
+	var grids [][]int32
 	for _, rowStr := range rows {
-		row := []int32{}
+		var row []int32
 		for _, char := range rowStr {
 			row = append(row, char)
 		}
