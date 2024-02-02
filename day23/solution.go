@@ -50,14 +50,26 @@ func solution(fileName string) int {
 		nextPos = lo.Filter(nextPos, func(pos Pos, _ int) bool {
 			return pos.x >= 0 && pos.x < mapp.width && pos.y >= 0 && pos.y < mapp.height && mapp.grids[pos.y][pos.x] != '#' && !(*(point.history)).Contains(pos)
 		})
-		for _, pos := range nextPos {
-			nextHistory := (*(point.history)).Clone()
-			nextHistory.Add(pos)
-			nextPoint := Point{pos, &nextHistory}
+		if len(nextPos) == 1 {
+			pos := nextPos[0]
+			nextHistory := point.history
+			(*nextHistory).Add(pos)
+			nextPoint := Point{pos, point.history}
 			if pos == end {
 				possiblePath = append(possiblePath, nextPoint.history)
 			} else {
 				queue.PushBack(nextPoint)
+			}
+		} else {
+			for _, pos := range nextPos {
+				nextHistory := (*(point.history)).Clone()
+				nextHistory.Add(pos)
+				nextPoint := Point{pos, &nextHistory}
+				if pos == end {
+					possiblePath = append(possiblePath, nextPoint.history)
+				} else {
+					queue.PushBack(nextPoint)
+				}
 			}
 		}
 	}
