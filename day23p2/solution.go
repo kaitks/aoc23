@@ -118,5 +118,5 @@ func (history *History) Contains(pos Pos) bool {
 	if !exists {
 		value = 0
 	}
-	return value >= 2
+	return value >= 1
 }
